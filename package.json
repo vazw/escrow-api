@@ -9,7 +9,7 @@
     "blockchain",
     "library"
   ],
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "main": "./dist/main.cjs",
   "unpkg": "./dist/bundle.min.js",
