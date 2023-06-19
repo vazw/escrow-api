@@ -4,15 +4,18 @@ import { BaseSchema } from '../base.js'
 export type ContractData     = z.infer<typeof data>
 export type ContractTemplate = z.infer<typeof template>
 
-const { hash } = BaseSchema
+const { hash, hex } = BaseSchema
 
-const status  = z.enum([ 'draft', 'published', 'active', 'disputed', 'closed' ]),
-      members = z.array(hash),
-      description = z.string().max(2048)
+const status = z.enum([ 'draft', 'published', 'active', 'disputed', 'closed' ]),
+      agent       = hash,
+      member      = hash,
+      members     = member.array(),
+      description = z.string().max(2048),
+      signature   = hex
 
 const template = z.object({
   description,
-  agent   : hash.optional(),
+  agent   : agent.optional(),
   members : members.optional()
 })
 
@@ -24,23 +27,32 @@ const ref = z.object({
 const data = z.object({
   info: z.object({
     description,
-    agent : hash,
-    admin : hash
+    admin : hash,
+    agent : hash
   }),
   meta: z.object({
     block_id   : hash,
-    room_nonce : hash,
-    room_pub   : z.union([ hash, z.null() ]),
-    tap_root   : z.union([ hash, z.null() ]),
     open_txid  : z.union([ hash, z.null() ]),
     close_txid : z.union([ hash, z.null() ])
   }),
-  members,
+  room: z.object({
+    secret : hash,
+    nonce  : z.union([ hash, z.null() ]),
+    pubkey : z.union([ hash, z.null() ]),
+    hash   : z.union([ hash, z.null() ])
+  }),
   status,
-  id         : hash,
-  revision   : z.number(),
-  created_at : z.date(),
-  updated_at : z.date()
+  members,
+  contract_id : hash,
+  revision    : z.number(),
+  created_at  : z.date(),
+  updated_at  : z.date()
 })
 
-export const ContractSchema = { data, ref, template }
+export const ContractSchema = {
+  data,
+  members,
+  ref,
+  signature,
+  template
+}

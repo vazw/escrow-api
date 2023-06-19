@@ -3,6 +3,8 @@ import { EscrowRouter } from './routes/index.js'
 import { createFetch }  from './fetch2.js'
 import { SecretKey } from '@cmdcode/crypto-utils'
 
+export * from './schema/index.js'
+
 type Fetcher = (secret : Bytes) => typeof fetch
 
 interface EscrowConfig {

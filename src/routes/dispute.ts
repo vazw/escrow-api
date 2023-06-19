@@ -1,104 +1,106 @@
-import { assert_hash } from '../lib/assert.js'
+export {}
 
-import {
-  DisputeSchema,
-  DisputeTemplate
-} from '../schema/model/dispute.js'
+// import { assert_hash } from '../lib/assert.js'
 
-type Fetcher = typeof fetch
+// import {
+//   DisputeSchema,
+//   DisputeTemplate
+// } from '../schema/model/dispute.js'
 
-export class DisputeRouter {
-  readonly host  : string
-  readonly fetch : Fetcher
+// type Fetcher = typeof fetch
 
-  constructor (
-    hostname : string,
-    fetcher  : Fetcher
-  ) {
-    this.host  = hostname
-    this.fetch = fetcher
-  }
+// export class DisputeRouter {
+//   readonly host  : string
+//   readonly fetch : Fetcher
 
-  list = async () : Promise<Response> => {
-    return this.fetch(this.host + '/api/dispute')
-  }
+//   constructor (
+//     hostname : string,
+//     fetcher  : Fetcher
+//   ) {
+//     this.host  = hostname
+//     this.fetch = fetcher
+//   }
 
-  create = async (
-    contractId : string,
-    template   : DisputeTemplate
-  ) : Promise<Response> => {
-    assert_hash(contractId)
-    const schema = DisputeSchema.template
-    const body   = schema.parse(template)
-    return this.fetch(
-      this.host + `/api/dispute/${contractId}/create`,
-      {
-        method : 'POST',
-        body   : JSON.stringify(body)
-      }
-    )
-  }
+//   list = async () : Promise<Response> => {
+//     return this.fetch(this.host + '/api/dispute')
+//   }
 
-  read = async (contractId : string) : Promise<Response> => {
-    assert_hash(contractId)
-    return this.fetch(this.host + `/api/dispute/${contractId}`)
-  }
+//   create = async (
+//     contractId : string,
+//     template   : DisputeTemplate
+//   ) : Promise<Response> => {
+//     assert_hash(contractId)
+//     const schema = DisputeSchema.template
+//     const body   = schema.parse(template)
+//     return this.fetch(
+//       this.host + `/api/dispute/${contractId}/create`,
+//       {
+//         method : 'POST',
+//         body   : JSON.stringify(body)
+//       }
+//     )
+//   }
 
-  update = async (
-    contractId : string,
-    template   : DisputeTemplate
-  ) : Promise<Response> => {
-    assert_hash(contractId)
-    const schema = DisputeSchema.template
-    const body   = schema.parse(template)
-    return this.fetch(
-      this.host + `/api/dispute/${contractId}/update`,
-      {
-        method : 'POST',
-        body   : JSON.stringify(body)
-      }
-    )
-  }
+//   read = async (contractId : string) : Promise<Response> => {
+//     assert_hash(contractId)
+//     return this.fetch(this.host + `/api/dispute/${contractId}`)
+//   }
 
-  remove = async (
-    contractId : string
-  ) : Promise<Response> => {
-    assert_hash(contractId)
-    return this.fetch(
-      this.host + `/api/dispute/${contractId}/delete`
-    )
-  }
+//   update = async (
+//     contractId : string,
+//     template   : DisputeTemplate
+//   ) : Promise<Response> => {
+//     assert_hash(contractId)
+//     const schema = DisputeSchema.template
+//     const body   = schema.parse(template)
+//     return this.fetch(
+//       this.host + `/api/dispute/${contractId}/update`,
+//       {
+//         method : 'POST',
+//         body   : JSON.stringify(body)
+//       }
+//     )
+//   }
 
-  clear = async () : Promise<Response> => {
-    return this.fetch(this.host + '/api/dispute/clear')
-  }
+//   remove = async (
+//     contractId : string
+//   ) : Promise<Response> => {
+//     assert_hash(contractId)
+//     return this.fetch(
+//       this.host + `/api/dispute/${contractId}/delete`
+//     )
+//   }
 
-  records = {
-    update: async (
-      contractId : string,
-      records    : string[]
-    ) : Promise<Response> => {
-      assert_hash(contractId)
-      return this.fetch(
-        this.host + `/api/profile/${contractId}/record/add`,
-        {
-          method : 'POST',
-          body   : JSON.stringify(records)
-        }
-      )
-    },
-    remove: async (
-      contractId : string,
-      records    : string[]
-    ) : Promise<Response> => {
-      assert_hash(contractId)
-      return this.fetch(
-        this.host + `/api/profile/${contractId}/record/remove`,
-        {
-          method : 'POST',
-          body   : JSON.stringify(records)
-        }
-      )
-    }
-  }
-}
+//   clear = async () : Promise<Response> => {
+//     return this.fetch(this.host + '/api/dispute/clear')
+//   }
+
+//   records = {
+//     update: async (
+//       contractId : string,
+//       records    : string[]
+//     ) : Promise<Response> => {
+//       assert_hash(contractId)
+//       return this.fetch(
+//         this.host + `/api/profile/${contractId}/record/add`,
+//         {
+//           method : 'POST',
+//           body   : JSON.stringify(records)
+//         }
+//       )
+//     },
+//     remove: async (
+//       contractId : string,
+//       records    : string[]
+//     ) : Promise<Response> => {
+//       assert_hash(contractId)
+//       return this.fetch(
+//         this.host + `/api/profile/${contractId}/record/remove`,
+//         {
+//           method : 'POST',
+//           body   : JSON.stringify(records)
+//         }
+//       )
+//     }
+//   }
+// }
