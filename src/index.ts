@@ -4,6 +4,7 @@ import { createFetch }  from './fetch2.js'
 import { SecretKey } from '@cmdcode/crypto-utils'
 
 export * from './schema/index.js'
+export { assert_hash } from './lib/assert.js'
 
 type Fetcher = (secret : Bytes) => typeof fetch
 

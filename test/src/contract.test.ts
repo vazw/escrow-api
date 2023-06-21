@@ -32,7 +32,7 @@ async function list_contract_test (t : Test, c : EscrowAPI) {
 async function create_contract_test (t : Test, c : EscrowAPI) {
 
   const template = {
-    description: 'This is a test!'
+    title: 'Test contract'
   }
 
   t.plan(1)
@@ -50,16 +50,16 @@ async function create_contract_test (t : Test, c : EscrowAPI) {
 
     assert_hash(data.id)
     
-    const { description, moderator } = data.info
+    const { title, admin } = data.info
 
     if (
-      typeof moderator !== 'string' ||
-      moderator !== c.pubkey.hex
+      typeof admin !== 'string' ||
+      admin !== c.pubkey.hex
     ) {
       throw 'Admin key does not match user.'
     }
 
-    if (description !== template.description) {
+    if (title !== template.title) {
       throw 'Description does not match test vector.'
     }
 

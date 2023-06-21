@@ -1,32 +1,33 @@
 import { z } from 'zod'
-import { BaseSchema } from '../base.js'
+import { BaseSchema }   from '../base.js'
+import { RecordSchema } from './record.js'
 
-export type ProfileData = z.infer<typeof data>
-export type ProfileTag  = z.infer<typeof tag>
+export type ProfileData     = z.infer<typeof data>
+export type ProfileRecord   = z.infer<typeof record>
 export type ProfileTemplate = z.infer<typeof template>
 
-const { hash, signature, timestamp } = BaseSchema
-
-const tag  = z.string().array()
-const tags = z.array(tag)
+const { nonce, pubkey } = BaseSchema
+const { template: record_template } = RecordSchema
 
 const template = z.object({
-  alias : z.string(),
-  nonce : z.string()
+  nonce,
+  alias: z.string().min(2).max(32)
 })
 
-const data = z.object({
-  tags,
-  contract_id : hash,
-  pubkey      : hash,
-  content     : template,
-  id          : hash,
-  sig         : signature,
-  created_at  : timestamp
+const data = template.extend({
+  pubkey,
+  updated_at: z.date()
 })
+
+const record = record_template.extend({
+  type: z.literal('profile')
+})
+
+const label = record_template.shape.label
 
 export const ProfileSchema = {
   data,
-  template,
-  tags
+  label,
+  record,
+  template
 }

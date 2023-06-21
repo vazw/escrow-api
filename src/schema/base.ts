@@ -1,9 +1,11 @@
 import { z } from 'zod'
 
 const string    = z.string()
-const hex       = z.string().regex(/^[0-9a-fA-F]*$/)
-const hash      = hex.length(64)
-const signature = hex.length(128)
+const hex       = z.string().regex(/^[0-9a-fA-F]*$/).refine((e) => e.length % 2 === 0)
+const hash      = hex.refine((e) => e.length === 64)
+const pubkey    = hex.refine((e) => e.length === 64  || e.length === 66)
+const nonce     = hex.refine((e) => e.length === 128 || e.length === 132)
+const signature = hex.refine((e) => e.length === 128)
 const timestamp = z.number().max(4294967295)
 const literal   = z.union([ z.string(), z.number(), z.boolean(), z.null() ])
 const entries   = z.array(literal.array())
@@ -27,6 +29,8 @@ export const BaseSchema = {
   entries,
   json,
   record,
+  pubkey,
+  nonce,
   signature,
   timestamp,
   address,

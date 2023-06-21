@@ -1,6 +1,7 @@
 import { assert_hash } from '../lib/assert.js'
 
 import {
+  ProfileRecord,
   ProfileSchema,
   ProfileTemplate
 } from '../schema/model/profile.js'
@@ -23,25 +24,25 @@ export class ProfileRouter {
     return this.fetch(this.host + '/api/profile')
   }
 
-  create = async (
-    contractId : string,
-    template   : ProfileTemplate
-  ) : Promise<Response> => {
-    assert_hash(contractId)
-    const schema = ProfileSchema.template
-    const body   = schema.parse(template)
-    return this.fetch(
-      this.host + `/api/profile/${contractId}/create`,
-      {
-        method : 'POST',
-        body   : JSON.stringify(body)
-      }
-    )
-  }
+  // create = async (
+  //   contractId : string,
+  //   template   : ProfileTemplate
+  // ) : Promise<Response> => {
+  //   assert_hash(contractId)
+  //   const schema = ProfileSchema.template
+  //   const body   = schema.parse(template)
+  //   return this.fetch(
+  //     this.host + `/api/profile/${contractId}/create`,
+  //     {
+  //       method : 'POST',
+  //       body   : JSON.stringify(body)
+  //     }
+  //   )
+  // }
 
   read = async (contractId : string) : Promise<Response> => {
     assert_hash(contractId)
-    return this.fetch(this.host + `/api/profile/${contractId}`)
+    return this.fetch(this.host + `/api/profile/${contractId}/read`)
   }
 
   update = async (
@@ -73,16 +74,16 @@ export class ProfileRouter {
     return this.fetch(this.host + '/api/profile/clear')
   }
 
-  tags = {
+  records = {
     update: async (
       contractId : string,
-      tags       : string[]
+      records    : ProfileRecord[]
     ) : Promise<Response> => {
       assert_hash(contractId)
-      const schema = ProfileSchema.tags
-      const body   = schema.parse(tags)
+      const schema = ProfileSchema.record
+      const body   = records.map(e => schema.parse(e))
       return this.fetch(
-        this.host + `/api/profile/${contractId}/tags/update`,
+        this.host + `/api/profile/${contractId}/records/update`,
         {
           method : 'POST',
           body   : JSON.stringify(body)
@@ -91,13 +92,13 @@ export class ProfileRouter {
     },
     remove: async (
       contractId : string,
-      tags       : string[]
+      labels     : string[]
     ) : Promise<Response> => {
       assert_hash(contractId)
-      const schema = ProfileSchema.tags
-      const body   = schema.parse(tags)
+      const schema = ProfileSchema.label
+      const body   = labels.map(e => schema.parse(e))
       return this.fetch(
-        this.host + `/api/profile/${contractId}/tags/remove`,
+        this.host + `/api/profile/${contractId}/records/remove`,
         {
           method : 'POST',
           body   : JSON.stringify(body)
