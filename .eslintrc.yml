@@ -36,6 +36,7 @@ rules:
   "@typescript-eslint/return-await": [ 1, "in-try-catch" ]
   "@typescript-eslint/no-base-to-string": off
   "@typescript-eslint/naming-convention": off
+  "@typescript-eslint/explicit-function-return-type": off
   "@typescript-eslint/array-type": off
   "@typescript-eslint/no-unused-vars":
     - "error"

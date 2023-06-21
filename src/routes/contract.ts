@@ -25,88 +25,91 @@ export class ContractRouter {
     this.fetch = fetcher
   }
 
-  list = async () : Promise<ResponseAPI<ContractData[]>> => {
-    return this.fetch(this.host + '/api/contract')
-      .then(async res => handleResponse(res))
-  }
+  contract = {
 
-  create = async (
-    template : ContractCreate
-  ) : Promise<ResponseAPI<ContractData>> => {
-    const schema = ContractSchema.create
-    const body   = schema.parse(template)
-    return this.fetch(
-      this.host + '/api/contract/create',
-      {
-        method : 'POST',
-        body   : JSON.stringify(body)
-      }
-    ).then(async res => handleResponse(res))
-  }
+    list: async () : Promise<ResponseAPI<ContractData[]>> => {
+      return this.fetch(this.host + '/api/contract')
+        .then(async res => handleResponse(res))
+    },
 
-  read = async (
-    contractId : string
-  ) : Promise<ResponseAPI<ContractData>> => {
-    assert_hash(contractId)
-    return this.fetch(this.host + `/api/contract/${contractId}`)
-      .then(async res => handleResponse(res))
-  }
+    create: async (
+      template : ContractCreate
+    ) : Promise<ResponseAPI<ContractData>> => {
+      const schema = ContractSchema.create
+      const body   = schema.parse(template)
+      return this.fetch(
+        this.host + '/api/contract/create',
+        {
+          method : 'POST',
+          body   : JSON.stringify(body)
+        }
+      ).then(async res => handleResponse(res))
+    },
 
-  prune = async () : Promise<ResponseAPI> => {
-    return this.fetch(this.host + '/api/contract')
-      .then(async res => handleResponse(res))
-  }
+    read: async (
+      contractId : string
+    ) : Promise<ResponseAPI<ContractData>> => {
+      assert_hash(contractId)
+      return this.fetch(this.host + `/api/contract/${contractId}`)
+        .then(async res => handleResponse(res))
+    },
 
-  // actions = {
-  //   deposit: async (
-  //     contractId : string,
-  //     template   : string
-  //   ) => {
-  //     return this.fetch(
-  //       this.host + `/api/contract/${contractId}/deposit`,
-  //       {
-  //         method : 'POST',
-  //         body   : JSON.stringify(payload)
-  //       }
-  //     )
-  //   },
-  //   claim: async (
-  //     contractId : string,
-  //     payload    : string
-  //   ) : Promise<ResponseAPI> => {
-  //     return this.fetch(
-  //       this.host + `/api/contract/${contractId}/claim`,
-  //       {
-  //         method : 'POST',
-  //         body   : JSON.stringify(payload)
-  //       }
-  //     )
-  //   }
-  // }
+    prune: async () : Promise<ResponseAPI> => {
+      return this.fetch(this.host + '/api/contract')
+        .then(async res => handleResponse(res))
+    },
 
-  update = async (
-    contractId : string,
-    template   : ContractTemplate
-  ) : Promise<ResponseAPI> => {
-    assert_hash(contractId)
-    const schema = ContractSchema.template
-    const body   = schema.parse(template)
-    return this.fetch(
-      this.host + `/api/contract/${contractId}/admin/update`,
-      {
-        method : 'POST',
-        body   : JSON.stringify(body)
-      }
-    ).then(async res => handleResponse(res))
-  }
+    // actions = {
+    //   deposit: async (
+    //     contractId : string,
+    //     template   : string
+    //   ) => {
+    //     return this.fetch(
+    //       this.host + `/api/contract/${contractId}/deposit`,
+    //       {
+    //         method : 'POST',
+    //         body   : JSON.stringify(payload)
+    //       }
+    //     )
+    //   },
+    //   claim: async (
+    //     contractId : string,
+    //     payload    : string
+    //   ) : Promise<ResponseAPI> => {
+    //     return this.fetch(
+    //       this.host + `/api/contract/${contractId}/claim`,
+    //       {
+    //         method : 'POST',
+    //         body   : JSON.stringify(payload)
+    //       }
+    //     )
+    //   }
+    // }
 
-  cancel = async (
-    contractId : string
-  ) : Promise<ResponseAPI> => {
-    assert_hash(contractId)
-    return this.fetch(
-      this.host + `/api/contract/${contractId}/admin/cancel`
-    ).then(async res => handleResponse(res))
+    update: async (
+      contractId : string,
+      template   : ContractTemplate
+    ) : Promise<ResponseAPI> => {
+      assert_hash(contractId)
+      const schema = ContractSchema.template
+      const body   = schema.parse(template)
+      return this.fetch(
+        this.host + `/api/contract/${contractId}/admin/update`,
+        {
+          method : 'POST',
+          body   : JSON.stringify(body)
+        }
+      ).then(async res => handleResponse(res))
+    },
+
+    cancel: async (
+      contractId : string
+    ) : Promise<ResponseAPI> => {
+      assert_hash(contractId)
+      return this.fetch(
+        this.host + `/api/contract/${contractId}/admin/cancel`
+      ).then(async res => handleResponse(res))
+    }
   }
 
   endorse = {
