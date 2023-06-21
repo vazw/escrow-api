@@ -1,5 +1,9 @@
-import { ContractRouter } from './contract.js'
+import { ContractRouter }  from './contract.js'
+import { EndorseRouter }   from './endorse.js'
+import { MembersRouter }   from './members.js'
 import { ProfileRouter }   from './profile.js'
+import { RecordRouter }    from './records.js'
+import { SignatureRouter } from './signatures.js'
 
 type Fetcher = typeof fetch
 
@@ -7,40 +11,35 @@ export class EscrowRouter {
   readonly host  : string
   readonly fetch : Fetcher
 
-  readonly _router  : ContractRouter
-  readonly _profile : ProfileRouter
-
   constructor (
     hostname : string,
     fetcher  : Fetcher
   ) {
     this.host     = hostname
     this.fetch    = fetcher
-    this._router  = new ContractRouter(this.host, this.fetch)
-    this._profile = new ProfileRouter(this.host, this.fetch)
   }
 
   get contract () {
-    return this._router.contract
+    return new ContractRouter(this.host, this.fetch)
   }
 
   get endorse () {
-    return this._router.endorse
+    return new EndorseRouter(this.host, this.fetch)
   }
 
   get members () {
-    return this._router.members
+    return new MembersRouter(this.host, this.fetch)
   }
 
   get profile () {
-    return this._profile
+    return new ProfileRouter(this.host, this.fetch)
   }
 
   get records () {
-    return this._router.records
+    return new RecordRouter(this.host, this.fetch)
   }
 
-  get sign () {
-    return this._router.sign
+  get signatures () {
+    return new SignatureRouter(this.host, this.fetch)
   }
 }

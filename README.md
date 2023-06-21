@@ -1,12 +1,33 @@
 # BitEscrow API
 
+## Create a client.
+
 ```ts
-// Create a client object with a secret key.
+import { EscrowClient } from '@cmdcode/escrow-api'
+// Create a secret key.
+const secret = Buff.str('alice').digest
+// Create a client object using a secret key.
 const client = new EscrowAPI(secret)
-// You can view the pubkey and access the API.
-const { pubkey, API } = client
-// Full API details.
-const API = {
+// You can view the pubkey and access the API tools directly.
+const { API, fetch, pubkey, sign } = client
+```
+
+## Create a contract
+
+```ts
+import { EscrowContract } from '@cmdcode/escrow-api'
+// Create a contract using a client and template.
+const contract = await EscrowContract.create(client, {
+  title : 'Example Escrow Contract'
+})
+```
+
+## Client API Reference
+
+```ts
+let client = new EscrowClient(secret)
+
+client.API = {
   contract : {
     list   : ()                                               => Promise<ResponseAPI<ContractData[]>>,
     create : (template: ContractCreate)                       => Promise<ResponseAPI<ContractData>>,
@@ -29,7 +50,7 @@ const API = {
     update  : (contractId: string, template: ProfileTemplate) => Promise<ResponseAPI>,
     remove  : (contractId: string)                            => Promise<ResponseAPI>,
     clear   : ()                                              => Promise<ResponseAPI>,
-    records : {
+    tags : {
       update: (contractId: string, records: ProfileRecord[])  => Promise<ResponseAPI>,
       remove: (contractId: string, labels: string[])          => Promise<ResponseAPI>
     }
@@ -55,26 +76,56 @@ interface ContractData {
   revision    : number
   created_at  : Date
   updated_at  : Date
-  info: {
-    // Contract info is editable by the admin.
-    title  : string
-    admin  : string
-    agent  : string
-    desc  ?: string | undefined
-    terms ?: string | undefined
+
+  claims: ClaimData[] {
+
+    data    : string[]
+    methods : string[]
+    params  : string[]
+    value   : number
   }
+
+  data: {
+
+  }
+
+  details: {
+    // Contract info is editable by the admin.
+    updated_at : Date
+    title      : string
+    admin      : string
+    agent      : string
+    desc      ?: string | undefined
+    terms     ?: string | undefined
+  }
+
+  endorsements : EndorseData[] {
+    // Collect signed endorsements from other members.
+    updated_at : Date
+    pubkey     : string
+    hash       : string
+    signature  : string
+  }
+
+  fees: PaymentData[] {
+    address : string
+    note   ?: string
+    value   : number
+  }
+
   meta: {
     // Metadata is updated by the server.
     block_id    : string
     open_txid  ?: string | undefined
     close_txid ?: string | undefined
   }
-  outputs: {
-    data    : string[]
-    methods : string[]
-    scripts : string[]
+
+  payments: PaymentData[] {
+    address : string
+    note   ?: string
     value   : number
-  }[]
+  }
+
   room: {
     // This data is for collaboration and signing.
     secret     : string
@@ -82,13 +133,7 @@ interface ContractData {
     pubkey    ?: string | undefined
     hash      ?: string | undefined
   }
-  endorsements : {
-    // Collect signed endorsements from other members.
-    updated_at : Date
-    pubkey     : string
-    hash       : string
-    signature  : string
-  }[]
+
   profiles: {
     // Each member manages their own profile data.
     updated_at : Date
@@ -116,9 +161,61 @@ interface ContractData {
   transactions: string[]
 }
 
+interface PaymentData {
+  address : string
+  note   ?: string
+  value   : number
+}
+
 interface CoinLock {
   method  : string
   params  : string[]
   version : string
+}
+```
+## EscrowContract API Reference
+
+```ts
+const contract = new EscrowContract(client, contract_id)
+
+let contract = {
+  cid          : string,
+  API          : ContractRouter,
+  pubkey       : string,
+  data         : Promise<ContractData>,
+  endorsements : Promise<EndorseData[]>,
+  members      : Promise<string[]>,
+  profiles     : Promise<ProfileData[]>,
+  signatures   : Promise<SignatureData[]>
+
+  fetch () => Promise<ContractData>
+  
+  endorse : {
+    API : EndorseRouter,
+    add (hash ?: string) : Promise<EndorseData>
+    remove()             : Promise<EndorseData | undefined>
+  }
+
+  member : {
+    API : MembersRouter,
+    add    (member: string)    : Promise<string[]>,
+    remove (member: string)    : Promise<string[]>,
+    update (members: string[]) : Promise<string[]>,
+    delete (members: string[]) : Promise<string[]>
+  }
+
+  profile : {
+    API    : ProfileRouter,
+    pubkey : string,
+    data   : Promise<ProfileData | undefined>,
+    update (template: ProfileTemplate) : Promise<ProfileData | undefined>,
+    remove ()                          : Promise<ProfileData | undefined>
+  }
+
+  signature : {
+    API : SignatureRouter,
+    add (hash ?: string) : Promise<SignatureData | undefined>
+    remove ()            : Promise<SignatureData | undefined>
+  }
 }
 ```
