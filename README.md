@@ -1,10 +1,11 @@
 # BitEscrow API
 
 ```ts
+// Create a client object with a secret key.
 const client = new EscrowAPI(secret)
-
+// You can view the pubkey and access the API.
 const { pubkey, API } = client
-
+// Full API details.
 const API = {
   contract : {
     list   : ()                                               => Promise<ResponseAPI<ContractData[]>>,
@@ -42,4 +43,82 @@ const API = {
     update : (contractId: string, signature: string)         => Promise<ResponseAPI>,
     remove : (contractId: string)                            => Promise<ResponseAPI>
   }
+}
+```
+
+```ts
+// Main ContractData object.
+interface ContractData {
+  contract_id : string
+  members     : string[]
+  status      : "draft" | "published" | "active" | "disputed" | "closed"
+  revision    : number
+  created_at  : Date
+  updated_at  : Date
+  info: {
+    // Contract info is editable by the admin.
+    title  : string
+    admin  : string
+    agent  : string
+    desc  ?: string | undefined
+    terms ?: string | undefined
+  }
+  meta: {
+    // Metadata is updated by the server.
+    block_id    : string
+    open_txid  ?: string | undefined
+    close_txid ?: string | undefined
+  }
+  outputs: {
+    data    : string[]
+    methods : string[]
+    scripts : string[]
+    value   : number
+  }[]
+  room: {
+    // This data is for collaboration and signing.
+    secret     : string
+    nonce     ?: string | undefined
+    pubkey    ?: string | undefined
+    hash      ?: string | undefined
+  }
+  endorsements : {
+    // Collect signed endorsements from other members.
+    updated_at : Date
+    pubkey     : string
+    hash       : string
+    signature  : string
+  }[]
+  profiles: {
+    // Each member manages their own profile data.
+    updated_at : Date
+    pubkey     : string
+    nonce      : string
+    alias      : string
+  }[]
+  records: {
+    // All members can manage records for the contract.
+    updated_at : Date
+    pubkey     : string
+    label      : string
+    kind       : "data" | "script" | "term"
+    content    : string[]
+  }[]
+  signatures: {
+    updated_at : Date
+    kind       : "claim" | "settle"
+    outputs    : string[]
+    pubkey     : string
+    sighash    : string
+    txhex      : string
+    psig       : string
+  }[]
+  transactions: string[]
+}
+
+interface CoinLock {
+  method  : string
+  params  : string[]
+  version : string
+}
 ```
