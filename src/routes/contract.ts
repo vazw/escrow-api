@@ -1,11 +1,15 @@
 import { assert_hash } from '../lib/assert.js'
+import { SignatureData } from '../schema/index.js'
 
 import {
   ContractCreate,
+  ContractData,
   ContractSchema,
   ContractTemplate
 } from '../schema/model/contract.js'
 import { RecordQuery, RecordSchema, RecordTemplate } from '../schema/model/record.js'
+import { ResponseAPI } from '../schema/types.js'
+import { handleResponse } from './util.js'
 
 type Fetcher = typeof fetch
 
@@ -21,11 +25,14 @@ export class ContractRouter {
     this.fetch = fetcher
   }
 
-  list = async () : Promise<Response> => {
+  list = async () : Promise<ResponseAPI<ContractData[]>> => {
     return this.fetch(this.host + '/api/contract')
+      .then(async res => handleResponse(res))
   }
 
-  create = async (template : ContractCreate) : Promise<Response> => {
+  create = async (
+    template : ContractCreate
+  ) : Promise<ResponseAPI<ContractData>> => {
     const schema = ContractSchema.create
     const body   = schema.parse(template)
     return this.fetch(
@@ -34,16 +41,20 @@ export class ContractRouter {
         method : 'POST',
         body   : JSON.stringify(body)
       }
-    )
+    ).then(async res => handleResponse(res))
   }
 
-  read = async (contractId : string) : Promise<Response> => {
+  read = async (
+    contractId : string
+  ) : Promise<ResponseAPI<ContractData>> => {
     assert_hash(contractId)
     return this.fetch(this.host + `/api/contract/${contractId}`)
+      .then(async res => handleResponse(res))
   }
 
-  prune = async () : Promise<Response> => {
+  prune = async () : Promise<ResponseAPI> => {
     return this.fetch(this.host + '/api/contract')
+      .then(async res => handleResponse(res))
   }
 
   // actions = {
@@ -62,7 +73,7 @@ export class ContractRouter {
   //   claim: async (
   //     contractId : string,
   //     payload    : string
-  //   ) : Promise<Response> => {
+  //   ) : Promise<ResponseAPI> => {
   //     return this.fetch(
   //       this.host + `/api/contract/${contractId}/claim`,
   //       {
@@ -76,7 +87,7 @@ export class ContractRouter {
   update = async (
     contractId : string,
     template   : ContractTemplate
-  ) : Promise<Response> => {
+  ) : Promise<ResponseAPI> => {
     assert_hash(contractId)
     const schema = ContractSchema.template
     const body   = schema.parse(template)
@@ -86,23 +97,23 @@ export class ContractRouter {
         method : 'POST',
         body   : JSON.stringify(body)
       }
-    )
+    ).then(async res => handleResponse(res))
   }
 
   cancel = async (
     contractId : string
-  ) : Promise<Response> => {
+  ) : Promise<ResponseAPI> => {
     assert_hash(contractId)
     return this.fetch(
       this.host + `/api/contract/${contractId}/admin/cancel`
-    )
+    ).then(async res => handleResponse(res))
   }
 
   endorse = {
     update: async (
       contractId  : string,
       endorsement : string
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       const schema = ContractSchema.endorsement
       const body   = schema.parse(endorsement)
@@ -112,18 +123,18 @@ export class ContractRouter {
           method : 'POST',
           body   : JSON.stringify(body)
         }
-      )
+      ).then(async res => handleResponse(res))
     },
     remove: async (
       contractId : string
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       return this.fetch(
         this.host + `/api/contract/${contractId}/endorse/remove`,
         {
           method: 'POST'
         }
-      )
+      ).then(async res => handleResponse(res))
     }
   }
 
@@ -131,7 +142,7 @@ export class ContractRouter {
     update: async (
       contractId : string,
       members    : string[]
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       const schema = ContractSchema.members
       const body   = schema.parse(members)
@@ -141,12 +152,12 @@ export class ContractRouter {
           method : 'POST',
           body   : JSON.stringify(body)
         }
-      )
+      ).then(async res => handleResponse(res))
     },
     remove: async (
       contractId : string,
       members    : string[]
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       const schema = ContractSchema.members
       const body   = schema.parse(members)
@@ -156,7 +167,7 @@ export class ContractRouter {
           method : 'POST',
           body   : JSON.stringify(body)
         }
-      )
+      ).then(async res => handleResponse(res))
     }
   }
 
@@ -164,7 +175,7 @@ export class ContractRouter {
     update: async (
       contractId : string,
       records    : RecordTemplate[]
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       const schema = RecordSchema.template
       const body   = records.map(e => schema.parse(e))
@@ -174,12 +185,12 @@ export class ContractRouter {
           method : 'POST',
           body   : JSON.stringify(body)
         }
-      )
+      ).then(async res => handleResponse(res))
     },
     remove: async (
       contractId : string,
       queries    : RecordQuery[]
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       const schema = RecordSchema.query
       const body   = queries.map(e => schema.parse(e))
@@ -189,36 +200,44 @@ export class ContractRouter {
           method : 'POST',
           body   : JSON.stringify(body)
         }
-      )
+      ).then(async res => handleResponse(res))
     }
   }
 
   sign = {
+    list: async (
+      contractId : string
+    ) : Promise<ResponseAPI<SignatureData[]>> => {
+      assert_hash(contractId)
+      return this.fetch(
+        this.host + `/api/contract/${contractId}/signature`
+      ).then(async res => handleResponse(res))
+    },
     update: async (
       contractId : string,
       signature  : string
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       const schema = ContractSchema.signature
       const body   = schema.parse(signature)
       return this.fetch(
-        this.host + `/api/contract/${contractId}/sign/update`,
+        this.host + `/api/contract/${contractId}/signature/update`,
         {
           method : 'POST',
           body   : JSON.stringify(body)
         }
-      )
+      ).then(async res => handleResponse(res))
     },
     remove: async (
       contractId : string
-    ) : Promise<Response> => {
+    ) : Promise<ResponseAPI> => {
       assert_hash(contractId)
       return this.fetch(
-        this.host + `/api/contract/${contractId}/sign/remove`,
+        this.host + `/api/contract/${contractId}/signature/remove`,
         {
           method: 'POST'
         }
-      )
+      ).then(async res => handleResponse(res))
     }
   }
 }

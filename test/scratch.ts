@@ -35,15 +35,13 @@ const profile : ProfileTemplate = {
   nonce: Buff.random(64).hex,
 }
 
-const res = await client.API.profile.read(
+const res = await client.API.contract.read(
   'bcdcc755d88f7438f2fe8577c7188c3f188386dac48ecbc3125ded1ae157b034'
 )
 
 if (!res.ok) {
-  throw `${res.status} ${res.statusText}`
+  console.log(res.err)
+} else {
+  const { data } = res
+  console.log(data.records[0])
 }
-
-const response = await res.json()
-
-console.log(JSON.stringify(response.data, null, 2))
-
