@@ -1,5 +1,5 @@
 import { z }          from 'zod'
-import { BaseSchema } from '../base.js'
+import { BaseSchema } from './base.js'
 
 export type EndorseData     = z.infer<typeof data>
 export type EndorseTemplate = z.infer<typeof template>

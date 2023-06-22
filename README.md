@@ -9,7 +9,9 @@ const secret = Buff.str('alice').digest
 // Create a client object using a secret key.
 const client = new EscrowAPI(secret)
 // You can view the pubkey and access the API tools directly.
-const { API, fetch, pubkey, sign } = client
+const { API, pubkey } = client
+// You can fetch a contract by Id.
+const contract = await client.getContract(contract_id)
 ```
 
 ## Create a contract
@@ -182,38 +184,97 @@ let contract = {
   cid          : string,
   API          : ContractRouter,
   pubkey       : string,
-  data         : Promise<ContractData>,
+
+  // Claim outputs show pending closing tx.
+  claims       : Promise<ClaimData[]>,
+  // Deposit inputs are used in the closing tx.
+  deposits     : Promise<DepositData[]>,
+  details      : Promise<ContractInfo>,
   endorsements : Promise<EndorseData[]>,
-  members      : Promise<string[]>,
-  profiles     : Promise<ProfileData[]>,
-  signatures   : Promise<SignatureData[]>
+  // Fee outputs are used in the closing tx.
+  fees         : Promise<FeeData[]>,
+  members      : Promise<Map<string, ProfileData>>,
+  meta         : Promise<ContractMeta>,
+  // Payment outputs are used in the closing tx.
+  payments     : Promise<PaymentData[]>,
+  records      : Promise<RecordData[]>,
+  scripts      : Promise<ScriptData[]>,
+  // If enough signature are collected, and the
+  // closing tx covers the required payment and fees,
+  // the escrow agent should auto-sign.
+  signatures   : Promise<SignatureData[]>,
+  // All transactions tied to the contract are here.
+  transactions : Promise<TransactionData[]>
 
   fetch () => Promise<ContractData>
-  
+
+  join()
+  leave()
+
+  // These options are only available 
+  // during the draft stage of a contract.
+  access : {
+    // Add pubkeys to the member list.
+    add    (pubkeys : string[]) : Promise<string[]>,
+    // Remove pubkeys from the member list.
+    remove (pubkeys : string[]) : Promise<string[]>,
+  }
+
+  // These options are only available 
+  // during the draft stage of a contract.
+  admin : {
+    // Cancel the contract.
+    cancel ()
+    // Transfer admin rights to another key.
+    transfer()
+    // Update the details of the contract.
+    update ()
+  }
+
+  check : {
+    claims()
+    deposits()
+  }
+
+  data : {
+    // Add a record to the contract output.
+    add()
+    // Remove a record from the contract output.
+    remove()
+  }
+
   endorse : {
     API : EndorseRouter,
+    list
     add (hash ?: string) : Promise<EndorseData>
     remove()             : Promise<EndorseData | undefined>
   }
 
-  member : {
-    API : MembersRouter,
-    add    (member: string)    : Promise<string[]>,
-    remove (member: string)    : Promise<string[]>,
-    update (members: string[]) : Promise<string[]>,
-    delete (members: string[]) : Promise<string[]>
+  payment : {
+    // Add a payment output.
+    add()
+    // Remove a payment output.
+    remove()
   }
 
   profile : {
-    API    : ProfileRouter,
-    pubkey : string,
-    data   : Promise<ProfileData | undefined>,
+    data : Promise<ProfileData | undefined>,
     update (template: ProfileTemplate) : Promise<ProfileData | undefined>,
-    remove ()                          : Promise<ProfileData | undefined>
+    tag  : {
+      add()
+      remove()
+    }
+  }
+
+  script : {
+    // Add a custom script to the contract output.
+    add()
+    // Remove a custom script from the contract output.
+    remove()
   }
 
   signature : {
-    API : SignatureRouter,
+    data
     add (hash ?: string) : Promise<SignatureData | undefined>
     remove ()            : Promise<SignatureData | undefined>
   }

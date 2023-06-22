@@ -1,4 +1,5 @@
-export * from './base.js'
+export * from './model/base.js'
+export * from './types.js'
 export * from './model/contract.js'
 export * from './model/endorse.js'
 export * from './model/profile.js'

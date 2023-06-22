@@ -1,3 +1,7 @@
+export interface ContractConfig {
+  cache_exp  : number
+}
+
 interface PassResponse<T> {
   ok   : true
   data : T
