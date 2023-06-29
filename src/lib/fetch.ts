@@ -1,6 +1,7 @@
 // Need fetcher and middleware for handling user sessions.
-import { Buff, Bytes } from '@cmdcode/buff-utils'
-import { PublicKey, SecretKey } from '@cmdcode/crypto-utils'
+import { Buff } from '@cmdcode/buff-utils'
+import { verify as V } from '@cmdcode/crypto-utils'
+import { SignerAPI }      from '../schema/index.js'
 
 interface SessionConfig {
   host    ?: string
@@ -24,15 +25,14 @@ const DEFAULT_CONFIG : SessionConfig = {
 const now = () : number => Math.floor(Date.now() / 1000)
 
 function sign (
-  secret  : Bytes,
+  signer  : SignerAPI,
   message : string
 ) : string {
-  const sec = new SecretKey(secret, { type: 'taproot' })
   const msg  = Buff.str(message)
   const time = Buff.num(now(), 4)
   const hash = Buff.join([ time, msg ]).digest
-  const sig  = sec.sign(hash)
-  const tkn  = [ sec.pub, sig, time ]
+  const sig  = signer.sign(hash)
+  const tkn  = [ signer.pubkey, sig, time ]
   if (LOG_TOKENS) {
     console.log('sign:', message, hash.hex)
     verify(Buff.join(tkn).b64url, message)
@@ -73,15 +73,15 @@ export function verify (
   }
 
   const hash = Buff.join([ time, msg ]).digest
-  const pub  = new PublicKey(pubkey, { type: 'taproot' })
+
   if (LOG_TOKENS) {
     console.log('verify:', message, hash.hex)
   }
-  return pub.verify(sig, hash)
+  return V(sig, hash, pubkey)
 }
 
 export function createFetch (
-  secret : Bytes,
+  signer : SignerAPI,
   config : Partial<SessionConfig> = {}
   ) : typeof fetch {
   return async (
@@ -110,7 +110,7 @@ export function createFetch (
         ? init.body
         : ''
 
-    const token  = sign(secret, url + body)
+    const token  = sign(signer, url + body)
     init.headers = { Authorization: 'Bearer ' + token }
 
     return fetch(input, init)

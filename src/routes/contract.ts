@@ -1,13 +1,13 @@
 import { assert_hash }    from '../lib/assert.js'
-import { ResponseAPI }    from '../schema/types.js'
 import { handleResponse } from './util.js'
 
 import {
   ContractCreate,
   ContractData,
+  // ContractTemplate,
   ContractSchema,
-  ContractTemplate
-} from '../schema/model/contract.js'
+  ResponseAPI
+} from '../schema/index.js'
 
 type Fetcher = typeof fetch
 
@@ -28,6 +28,14 @@ export class ContractRouter {
       .then(async res => handleResponse(res))
   }
 
+  async read (
+    contractId : string
+  ) : Promise<ResponseAPI<ContractData>> {
+    assert_hash(contractId)
+    return this.fetch(this.host + `/api/contract/${contractId}`)
+      .then(async res => handleResponse(res))
+  }
+
   async create (
     template : ContractCreate
   ) : Promise<ResponseAPI<ContractData>> {
@@ -42,34 +50,21 @@ export class ContractRouter {
     ).then(async res => handleResponse(res))
   }
 
-  async read (
-    contractId : string
-  ) : Promise<ResponseAPI<ContractData>> {
-    assert_hash(contractId)
-    return this.fetch(this.host + `/api/contract/${contractId}`)
-      .then(async res => handleResponse(res))
-  }
-
-  async prune () : Promise<ResponseAPI> {
-    return this.fetch(this.host + '/api/contract')
-      .then(async res => handleResponse(res))
-  }
-
-  async update (
-    contractId : string,
-    template   : ContractTemplate
-  ) : Promise<ResponseAPI> {
-    assert_hash(contractId)
-    const schema = ContractSchema.template
-    const body   = schema.parse(template)
-    return this.fetch(
-      this.host + `/api/contract/${contractId}/admin/update`,
-      {
-        method : 'POST',
-        body   : JSON.stringify(body)
-      }
-    ).then(async res => handleResponse(res))
-  }
+  // async update (
+  //   contractId : string,
+  //   template   : ContractTemplate
+  // ) : Promise<ResponseAPI> {
+  //   assert_hash(contractId)
+  //   const schema = DetailSchema.template
+  //   const body   = schema.parse(template)
+  //   return this.fetch(
+  //     this.host + `/api/contract/${contractId}/admin/update`,
+  //     {
+  //       method : 'POST',
+  //       body   : JSON.stringify(body)
+  //     }
+  //   ).then(async res => handleResponse(res))
+  // }
 
   async cancel (
     contractId : string

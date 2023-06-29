@@ -1,9 +1,8 @@
-import { Buff }            from '@cmdcode/buff-utils'
 import { EscrowContract }  from './Contract.js'
 import { SignatureRouter } from '../routes/signatures.js'
 import { SignatureData }   from '../schema/index.js'
 
-export class SignatureController {
+export class SignController {
   readonly _contract : EscrowContract
 
   constructor (
@@ -13,60 +12,50 @@ export class SignatureController {
   }
 
   get API () : SignatureRouter {
-    return this._contract._client.API.signatures
+    return this._contract.API.signatures
   }
 
-  get cid () : string {
-    return this._contract.cid
-  }
-
-  get pubkey () : string {
-    return this._contract._client.pubkey.hex
+  get contract_id () : string {
+    return this._contract.id
   }
 
   get data () : Promise<SignatureData | undefined> {
-    return this.list().then(e => e.find(p => p.pubkey === this.pubkey))
-  }
-
-  get hash () : Promise<string> {
-    return this._contract.data.then(e => e.meta.block_id)
+    return this._contract.signatures.then(e => {
+      return e.find(p => p.pubkey === this.signer.pubkey)
+    })
   }
 
   get signer () {
-    return this._contract._client.sign
+    return this._contract.signer
   }
 
   async refresh () {
     return this._contract.fetch()
   }
 
-  async list () : Promise<SignatureData[]> {
-    return this._contract.data.then(e => e.signatures)
-  }
-
-  async add (hash ?: string) {
-    if (hash === undefined) {
-      hash = await this.hash
-    }
-    const sig = this.signer(hash)
-    const res = await this.API.update(this.cid, {
-      hash,
-      psig : Buff.bytes(sig).hex
-    })
-    if (!res.ok) throw new Error(res.err)
-    return this.refresh().then(() => this.data)
-  }
+  // async update (hash : string) {
+  //   const id  = this.contract_id
+  //   const sig = this.signer.sign(hash)
+  //   const res = await this.API.update(id, {
+  //     kind : 'close',
+  //     hash,
+  //     psig : Buff.bytes(sig).hex
+  //   })
+  //   if (res.ok) this.refresh()
+  //   return res
+  // }
 
   async remove () {
-    const res = await this.API.remove(this.cid)
-    if (!res.ok) throw new Error(res.err)
-    return this.refresh().then(() => this.data)
+    const res = await this.API.remove(this.contract_id)
+    if (res.ok) this.refresh()
+    return res
   }
 
   // async clear () {
-  //   const res = await this.API. (this.cid, members)
-  //   if (!res.ok) throw new Error(res.err)
-  //   this.refresh().then(e => e.members)
+  //   const id  = this.contract_id
+  //   const res = await this.API.clear(id)
+  //   if (res.ok) this.refresh()
+  //   return res
   // }
 
 }

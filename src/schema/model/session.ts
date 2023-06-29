@@ -1,18 +1,22 @@
 import { z }          from 'zod'
 import { BaseSchema } from './base.js'
+import { TermSchema } from './terms.js'
 
 export type SessionData = z.infer<typeof data>
 
-const { date, hash, hex, nonce, pubkey } = BaseSchema
+const { hash, label, hex, nonce, pubkey, script } = BaseSchema
+
+const template = z.tuple([ label, hex ])
 
 const data = z.object({
-  secret     : hash,
-  pubkey     : pubkey.optional(),
-  nonce      : nonce.optional(),
-  sighash    : hash.optional(),
-  txhex      : hex.optional(),
-  taptweak   : hash.optional(),
-  updated_at : date
+  secret    : hash,
+  pubkeys   : pubkey.array().default([]),
+  nonces    : nonce.array().default([]),
+  scripts   : script.array().default([]),
+  sighash   : hash.optional(),
+  taproot   : hash.optional(),
+  templates : template.array().default([]),
+  terms     : TermSchema.data.optional()
 })
 
 export const SessionSchema = { data }

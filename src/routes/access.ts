@@ -1,16 +1,11 @@
 import { assert_hash }    from '../lib/assert.js'
+import { ContractSchema } from '../schema/model/contract.js'
 import { ResponseAPI }    from '../schema/types.js'
 import { handleResponse } from './util.js'
 
-import {
-  RecordQuery,
-  RecordSchema,
-  RecordTemplate
-} from '../schema/index.js'
-
 type Fetcher = typeof fetch
 
-export class RecordRouter {
+export class MembersRouter {
   readonly host  : string
   readonly fetch : Fetcher
 
@@ -24,14 +19,14 @@ export class RecordRouter {
 
   async update (
     contractId : string,
-    records    : RecordTemplate[]
+    members    : string[]
   ) : Promise<ResponseAPI> {
     assert_hash(contractId)
-    const schema = RecordSchema.template
-    const body   = records.map(e => schema.parse(e))
+    const schema = ContractSchema.members
+    const body   = schema.parse(members)
     return this.fetch(
-      this.host + `/api/contract/${contractId}/record/update`,
-      {
+      this.host + `/api/contract/${contractId}/members/update`,
+            {
         method : 'POST',
         body   : JSON.stringify(body)
       }
@@ -40,14 +35,14 @@ export class RecordRouter {
 
   async remove (
     contractId : string,
-    queries    : RecordQuery[]
+    members    : string[]
   ) : Promise<ResponseAPI> {
     assert_hash(contractId)
-    const schema = RecordSchema.query
-    const body   = queries.map(e => schema.parse(e))
+    const schema = ContractSchema.members
+    const body   = schema.parse(members)
     return this.fetch(
-      this.host + `/api/contract/${contractId}/record/remove`,
-      {
+      this.host + `/api/contract/${contractId}/members/remove`,
+            {
         method : 'POST',
         body   : JSON.stringify(body)
       }

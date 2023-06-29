@@ -1,7 +1,7 @@
 import { EscrowContract } from './Contract.js'
-import { MembersRouter }  from '../routes/members.js'
+import { MembersRouter }  from '../routes/access.js'
 
-export class MemberController {
+export class AdminController {
   readonly _contract : EscrowContract
 
   constructor (
@@ -10,8 +10,8 @@ export class MemberController {
     this._contract = contract
   }
 
-  get cid () : string {
-    return this._contract.cid
+  get id () : string {
+    return this._contract.id
   }
 
   get API () : MembersRouter {
@@ -23,25 +23,25 @@ export class MemberController {
   }
 
   async add (member : string) {
-    const res = await this.API.update(this.cid, [ member ])
+    const res = await this.API.update(this.id, [ member ])
     if (!res.ok) throw new Error(res.err)
     return this.refresh().then(e => e.members)
   }
 
   async remove (member : string) {
-    const res = await this.API.remove(this.cid, [ member ])
+    const res = await this.API.remove(this.id, [ member ])
     if (!res.ok) throw new Error(res.err)
     return this.refresh().then(e => e.members)
   }
 
   async update (members : string[]) {
-    const res = await this.API.update(this.cid, members)
+    const res = await this.API.update(this.id, members)
     if (!res.ok) throw new Error(res.err)
     return this.refresh().then(e => e.members)
   }
 
   async delete (members : string[]) {
-    const res = await this.API.remove(this.cid, members)
+    const res = await this.API.remove(this.id, members)
     if (!res.ok) throw new Error(res.err)
     return this.refresh().then(e => e.members)
   }

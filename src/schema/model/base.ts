@@ -5,9 +5,11 @@ export type Json    = Literal | { [key : string] : Json } | Json[]
 
 const address    = z.string(),
       date       = z.date(),
+      label      = z.string().min(2).max(32),
       script     = z.string().array(),
+      str        = z.string(),
       timestamp  = z.number().max(4294967295),
-      value      = z.bigint().min(512n)
+      value      = z.number().max(Number.MAX_SAFE_INTEGER)
 
 const hex = z
   .string()
@@ -17,6 +19,7 @@ const hex = z
 const hash      = hex.refine((e) => e.length === 64)
 const pubkey    = hex.refine((e) => e.length === 64  || e.length === 66)
 const nonce     = hex.refine((e) => e.length === 128 || e.length === 132)
+const psig      = hex.refine((e) => e.length === 192)
 const signature = hex.refine((e) => e.length === 128)
 
 const base64    = z.string().regex(/^[a-zA-Z0-9+/]+={0,2}$/)
@@ -46,11 +49,14 @@ export const BaseSchema = {
   hex,
   literal,
   json,
+  label,
   nonce,
+  psig,
   pubkey,
+  record,
   script,
   signature,
-  record,
+  str,
   tags,
   timestamp,
   value

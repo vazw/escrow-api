@@ -4,19 +4,15 @@ import { BaseSchema } from './base.js'
 export type SignatureData     = z.infer<typeof data>
 export type SignatureTemplate = z.infer<typeof template>
 
-const { date, pubkey, hash } = BaseSchema
+const { label, pubkey, hash } = BaseSchema
 
 const template = z.object({
+  kind : label,
   hash,
-  psig: hash
+  psig : hash,
+  pubkey
 })
 
-const data = template.extend({
-  pubkey,
-  updated_at: date
-})
+const data = template.extend({ pubkey })
 
-export const SignatureSchema = {
-  data,
-  template
-}
+export const SignatureSchema = { data, template }

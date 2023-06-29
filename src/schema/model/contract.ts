@@ -1,52 +1,59 @@
 import { z }               from 'zod'
+import { AgentSchema }     from './agent.js'
 import { BaseSchema }      from './base.js'
-import { ClaimSchema }     from './claim.js'
 import { DepositSchema }   from './deposit.js'
-import { DetailSchema }    from './details.js'
-import { EndorseSchema }   from './endorse.js'
-import { MetaSchema }      from './meta.js'
-import { ProfileSchema }   from './profile.js'
-import { RecordSchema }    from './record.js'
-import { ReturnSchema }    from './return.js'
+import { ProposalSchema }  from './proposal.js'
 import { SessionSchema }   from './session.js'
 import { SignatureSchema } from './signature.js'
 import { TxSchema }        from './transaction.js'
 
-export type ContractData      = z.infer<typeof data>
-export type ContractCreate    = z.infer<typeof create>
+export type ContractCreate   = z.infer<typeof create>
+export type ContractData     = z.infer<typeof data>
+export type ContractTemplate = z.infer<typeof template>
 
-const { date, hash, pubkey } = BaseSchema
+const { hash, pubkey, timestamp, value } = BaseSchema
 
-const status  = z.enum([ 'draft', 'published', 'active', 'disputed', 'closed' ]),
-      members = pubkey.array()
+const desc    = z.string().max(2048).default(''),
+      feerate = z.number().default(1),
+      members = pubkey.array().default([]),
+      network = z.enum([ 'bitcoin', 'testnet', 'regtest' ]).default('bitcoin'),
+      hidden  = z.boolean().default(true),
+      status  = z.enum([ 'draft', 'published', 'active', 'disputed', 'closed' ]),
+      title   = z.string().max(64)
 
-const create = DetailSchema.template.extend({
-  profile : ProfileSchema.template.optional(),
-  records : RecordSchema.template.array().optional()
+const template = z.object({
+  title,
+  desc,
+  feerate,
+  network,
+  private: hidden,
+  value
 })
 
-const data = z.object({
-  contract_id  : hash,
+const create = template.merge(ProposalSchema.template).extend({ members })
+
+const base = z.object({
   status,
-  revision     : z.number(),
-  created_at   : date,
-  updated_at   : date,
-  claims       : ClaimSchema.data.array(),
-  deposits     : DepositSchema.data.array(),
-  details      : DetailSchema.data,
-  endorsements : EndorseSchema.data.array(),
   members,
-  meta         : MetaSchema.data,
-  profiles     : ProfileSchema.data.array(),
-  records      : RecordSchema.data.array(),
-  return       : ReturnSchema.data,
+  contract_id : hash,
+  admin       : pubkey,
+  created_at  : timestamp,
+  updated_at  : timestamp
+})
+
+const data = base.extend({
+  agent        : AgentSchema.data,
+  deposits     : DepositSchema.data.array().default([]),
+  proposals    : ProposalSchema.data.array().default([]),
+  info         : template,
   session      : SessionSchema.data,
-  signatures   : SignatureSchema.data.array(),
-  transactions : TxSchema.data.array()
+  signatures   : SignatureSchema.data.array().default([]),
+  transactions : TxSchema.data.array().default([])
 })
 
 export const ContractSchema = {
   create,
   data,
-  members
+  members,
+  template
 }

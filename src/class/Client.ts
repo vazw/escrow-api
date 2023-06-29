@@ -1,64 +1,57 @@
-import { Buff, Bytes }     from '@cmdcode/buff-utils'
-import { SecretKey, sign } from '@cmdcode/crypto-utils'
-import { EscrowRouter }    from '../routes/index.js'
-import { createFetch }     from '../fetch2.js'
-import { EscrowContract }  from './Contract.js'
-import { ContractConfig }  from '../schema/types.js'
+import { EscrowRouter }   from '../routes/index.js'
+import { createFetch }    from '../lib/fetch.js'
 
-type Fetcher = (secret : Bytes) => typeof fetch
-type Signer  = (secret : Bytes, message : Bytes) => Bytes
-type Sign    = (message : Bytes) => Bytes
+import {
+  apply_defaults,
+  ContractCreate,
+  ContractData,
+  EscrowConfig,
+  EscrowOptions,
+  SignerAPI
+} from '../schema/index.js'
 
-interface EscrowConfig {
-  host     : string
-  fetcher ?: Fetcher
-  signer  ?: Signer
-}
-
-const DEFAULT_CONFIG = {
-  host: 'http://localhost:3000'
-}
 
 export class EscrowClient {
-  readonly _secret : Buff
-  readonly options : EscrowConfig
+  readonly signer  : SignerAPI
+  readonly options : EscrowOptions
   readonly API     : EscrowRouter
   readonly fetch   : typeof fetch
-  readonly sign    : Sign
 
   constructor (
-    secret : Bytes,
-    config : Partial<EscrowConfig> = {}
+    signer  : SignerAPI,
+    config ?: EscrowConfig
   ) {
-    const opt = { ...DEFAULT_CONFIG, ...config }
-    const { host, fetcher, signer } = opt
+    const opt = apply_defaults(config)
+    const { host, fetcher } = opt
 
     this.options = opt
-    this._secret = Buff.bytes(secret)
+    this.signer  = signer 
 
     this.fetch = (fetcher !== undefined)
-      ? fetcher(secret)
-      : createFetch(secret)
+      ? fetcher(signer)
+      : createFetch(signer, config)
 
-    this.sign  = (signer !== undefined)
-      ? (message : Bytes) => signer(secret, message)
-      : (message : Bytes) => sign(secret, message, 'taproot')
+    this.signer = signer
 
     this.API = new EscrowRouter(host, this.fetch)
   }
 
-  get pubkey () : Buff {
-    return new SecretKey(this._secret).pub.x
-  }
-
-  async getContract (
-    contractId : string,
-    config    ?: Partial<ContractConfig>
-  ) : Promise<EscrowContract | undefined> {
-    const API = this.API.contract
-    const res = await API.read(contractId)
-    return (res.ok)
-      ? new EscrowContract(this, res.data, config)
-      : undefined
+  contract = {
+    create : async (template : ContractCreate) : Promise<ContractData> => {
+      const API = this.API.contract
+      const res = await API.create(template)
+      if (!res.ok) {
+        throw new Error(res.err)
+      }
+      return res.data
+    },
+    fetch : async (contractId : string) : Promise<ContractData> => {
+      const API = this.API.contract
+      const res = await API.read(contractId)
+      if (!res.ok) {
+        throw new Error(res.err)
+      }
+      return res.data
+    }
   }
 }

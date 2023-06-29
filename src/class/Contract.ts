@@ -1,106 +1,155 @@
-import { EscrowClient }        from '..'
-import { EventEmitter }        from './Emitter.js'
-import { MemberController }    from './Member.js'
-import { ContractParser }      from './Parser.js'
-import { ProfileController }   from './Profile.js'
-import { SignatureController } from './Signature.js'
+import { EscrowClient }       from './Client.js'
+import { EventEmitter }       from './Emitter.js'
+import { AdminController }    from './Admin.js'
+import { ContractParser }     from './Parser.js'
+import { ProposalController } from './Proposal.js'
+import { SignController }     from './Signature.js'
+import { EscrowRouter }       from '../routes/index.js'
+import { now }                from '../lib/utils.js'
 
 import { 
-  ContractConfig,
+  apply_defaults,
   ContractCreate,
   ContractData,
-  EndorseData,
-  ProfileData,
-  SignatureData
+  AgentData,
+  DepositData,
+  ProposalData,
+  SignatureData,
+  TransactionData,
+  EscrowConfig,
+  EscrowOptions,
+  SignerAPI
 } from '../schema/index.js'
 
-const DEFAULT_CONFIG = {
-  cache_exp : 1000 * 60 * 5
-}
 
 export class EscrowContract extends EventEmitter {
 
   static async create (
-    client   : EscrowClient, 
+    signer   : SignerAPI, 
     template : ContractCreate,
-    config   : Partial<ContractConfig> = {}
+    config  ?: EscrowConfig
   ) {
-    const API = client.API.contract
-    const res = await API.create(template)
-    if (!res.ok) throw new Error(res.err)
-    return new EscrowContract(client, res.data, config)
+    const client = new EscrowClient(signer, config)
+    const data   = await client.contract.create(template)
+    return new EscrowContract(client, data, config)
   }
 
-  readonly _cid    : string
+  static async fetch (
+    signer     : SignerAPI, 
+    contractId : string,
+    config    ?: EscrowConfig
+  ) {
+    const client = new EscrowClient(signer, config)
+    const data   = await client.contract.fetch(contractId)
+    return new EscrowContract(client, data, config)
+  }
+
+  readonly _id     : string
   readonly _client : EscrowClient
   readonly _parser : ContractParser
-  readonly config  : ContractConfig
+  readonly opt     : EscrowOptions
 
-  _cache          ?: ContractData
-  refreshed_at    ?: Date
+  _cache    ?: ContractData
+  updated_at : number
 
   constructor (
-    client   : EscrowClient,
-    contract : ContractData,
-    config   : Partial<ContractConfig> = {}
+    client  : EscrowClient,
+    data    : ContractData,
+    config ?: EscrowConfig
   ) {
     super()
-    this.config       = { ...DEFAULT_CONFIG, ...config }
-    this._client      = client
-    this._cid         = contract.contract_id
-    this._cache       = contract
-    this._parser      = new ContractParser(this)
-    this.refreshed_at = undefined
+    this.opt        = apply_defaults(config)
+    this._client    = client
+    this._id        = data.contract_id
+    this._parser    = new ContractParser(this)
+    this._cache     = data
+    this.updated_at = now()
   }
 
-  get cid () : string {
-    return this._cid
+  get id () : string {
+    return this._id
   }
 
-  get API () {
-    return this._client.API.contract
+  get signer () : SignerAPI {
+    return this._client.signer
   }
 
-  get pubkey () : string {
-    return this._client.pubkey.hex
+  get API () : EscrowRouter {
+    return this._client.API
+  }
+
+  get stale () : boolean {
+    return this.updated_at + this.opt.cache_exp < now()
   }
 
   get data () : Promise<ContractData> {
     return this.cache()
   }
 
-  get endorsements () : Promise<EndorseData[]> {
-    return this.data.then(res => res.endorsements)
+  get agent () : Promise<AgentData> {
+    return this.data.then(res => res.agent)
   }
+
+  // get claims () : Promise<ClaimData[]> {
+  //   return this.data.then(res => res.claims)
+  // }
+
+  get deposits () : Promise<DepositData[]> {
+    return this.data.then(res => res.deposits)
+  }
+
+  // get locks () : Promise<LockData[]> {
+  //   return this.data.then(res => res.locks)
+  // }
 
   get members () : Promise<string[]> {
-    return this.data.then(res => res.members)
+    return this.proposals.then(res => res.map(e => e.pubkey))
   }
 
-  get profiles () : Promise<ProfileData[]> {
-    return this.data.then(res => res.profiles)
+  get proposals () : Promise<ProposalData[]> {
+    return this.data.then(res => res.proposals)
   }
 
   get signatures () : Promise<SignatureData[]> {
     return this.data.then(res => res.signatures)
   }
 
+  get transactions () : Promise<TransactionData[]> {
+    return this.data.then(res => res.transactions)
+  }
+
+  // get votes () : Promise<VoteData[]> {
+  //   return this.data.then(res => res.votes)
+  // }
+
   async cache () {
-    return (this._cache !== undefined)
+    return (this._cache !== undefined && !this.stale)
       ? this._cache
       : this.fetch()
   }
 
   async fetch () {
-    const res = await this.API.read(this.cid)
+    const API = this._client.API.contract
+    const res = await API.read(this.id)
     if (!res.ok) throw new Error(res.err)
-    const ret = await this._parser.parse(res.data)
-    this._cache = ret
-    this.refreshed_at = new Date()
-    return res.data
+    const validData = await this._parser.parse(res.data)
+    this._cache     = validData
+    this.updated_at = now()
+    return validData
   }
 
-  member    = new MemberController(this)
-  profile   = new ProfileController(this)
-  signature = new SignatureController(this)
+  // async endorse () {
+  //   const schedules = this.proposal.schedules
+  //   for (const template of schedules) {
+  //     const sighash = get_sighash(template)
+  //     const sig = this.signer.sign(sighash)
+  //   }
+  // }
+
+  admin     = new AdminController(this)
+  // claim     = new ClaimController(this)
+  // deposit   = new DepositController(this)
+  proposal  = new ProposalController(this)
+  signature = new SignController(this)
+  // tx        = new TxController(this)
 }
