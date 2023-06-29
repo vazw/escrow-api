@@ -115,7 +115,7 @@ The deposit address is a taproot address constructed with the following paramete
   * Internal pubkey is the aggregate key of all members + agent.
   * Tap scripts include all terms negotiated in the contract.
   * Relative time-lock set to contract expiration + grace period
-  * Time-lock returns to the specified address.
+  * Funds are locked to the depositor's specified address.
 
 ```ts
 contract.deposit({
