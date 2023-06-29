@@ -89,7 +89,7 @@ contract.proposal.fromAlias('seller').accept()
 In order to finalize and publish the contract, all members must provide signatures for each funding scenario.
 
 ```ts
-// There should no longer be any conflicts with the buyer's terms.
+// There should no longer be any conflicts between parties.
 contract.conflicts = []
 contract.endorse()
 ```
@@ -159,7 +159,7 @@ If no duration has been set, then the contract will close immediately after all 
 **Expiration**
 
 ```ts
-terms = { details : { expires, grace, return_address, onexpired : 'return' } }
+terms = { details : { expires, grace, onexpired : 'return' } }
 contract.on('expired', (contract) => {})
 ```
 
