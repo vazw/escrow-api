@@ -7,9 +7,11 @@ export interface SignerAPI {
   // Provides the public key for the signer.
   pubkey   : string
   // Generate a new Signer using an HMAC plus seed.
-  generate : (seed  : Bytes)  => SignerAPI
+  generate : (seed : Bytes)  => SignerAPI
   // Perform an HMAC signing operation.
-  hmac     : (msg   : Bytes)  => string
+  hmac     : (msg : Bytes)  => string
+  // Produce a partial musig2 signature.
+  musign   : (challenge : Bytes, nonces : Bytes[], vectors : Bytes[]) => string
   // Produce a random cryptographic seed.
   random   : (size ?: number) => string
   // Produce a BIP0340 signature using the interal secret.

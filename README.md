@@ -26,15 +26,18 @@ const day = 60 * 60 * 24
 // Create a draft contract by passing in a signer and template.
 const contract = await EscrowContract.create(signer, {
   title : 'Example Escrow Contract',  // Specify a title for your contract.
+  value : 100_000,                    // Total value of the contract (before agent and miner fees).
   alias : 'seller',                   // You can use a short alias for your pubkey.
   nonce : signer.generate(64),        // Generate a random nonce for this draft session.
   terms : {
     // Seller wants the contract to close after 1 week.
-    details  : { duration: day * 7 },
+    details  : { duration: day * 7, onclose: 'payment' },
     // Seller is charging a non-refundable fee.
     fees     : [[ 10_000, 'bcp1selleraddress' ]],
     // Seller is receiving this payment on contract close.
-    payments : [[ 90_000, 'bcp1selleraddress' ]]
+    schedule : {
+      payment : [[ 90_000, 'bcp1selleraddress' ]]
+    }
   }
 })
 ```
@@ -42,17 +45,19 @@ const contract = await EscrowContract.create(signer, {
 ## Join an existing contract (in draft)
 
 ```ts
-// You can fetch an existing contract using the contract Id.
-const contract = new EscrowContract(signer, contract_id)
+// You can fetch an existing contract via the contract Id.
+const contract = EscrowContract.fetch(signer, contract_id)
 
 contract.join({
   alias : 'buyer',
   nonce : signer.random(64),
   terms : {
     // Buyer wants to the contract to expire after two weeks.
-    details : { expires: day * 14 },
+    details : { expires: day * 14, onexpired: 'return' },
     // Buyer will receiving a return of funds in a dispute.
-    returns  : [[ 100_000, 'bcp1buyeraddress' ]]
+    schedule : {
+      return : [[ 100_000, 'bcp1buyeraddress' ]]
+    }
   }
 })
 ```
@@ -65,45 +70,37 @@ In order to acheive consensus, all contract proposals must be identical.
 
 ```ts
 // There is a conflict with the seller's terms.
-contract.terms.conflicts = [ 'buyer_pubkey' ]
+contract.conflicts = [ 'buyer_pubkey' ]
 // Accept and copy over terms from the seller.
-contract.terms.byAlias('buyer').accept()
-// There should no longer be any conflicts with the buyer's terms.
-contract.terms.conflicts = []
+contract.proposal.fromAlias('buyer').accept()
 ```
 
 **Buyer**
 
 ```ts
 // There is a conflict with the seller's terms.
-contract.terms.conflicts = [ 'seller_pubkey' ]
+contract.conflicts = [ 'seller_pubkey' ]
 // Accept and copy over terms from the seller.
-contract.terms.byAlias('seller').accept()
-// There should no longer be any conflicts with the buyer's terms.
-contract.terms.conflicts = []
+contract.proposal.fromAlias('seller').accept()
 ```
 
 ## Sign and Publish a Contract
 
 In order to finalize and publish the contract, all members must provide signatures for each funding scenario.
 
-**Buyer**
 ```ts
-contract.sign()
-```
-
-**Seller**
-```ts
-contract.sign()
+// There should no longer be any conflicts with the buyer's terms.
+contract.conflicts = []
+contract.endorse()
 ```
 
 Result:
 
 ```ts
 contract.signatures = {
-  { path : 'payout', pubkey : 'buyer_pub',  psigs, sighash },
+  { path : 'payment', pubkey : 'buyer_pub',  psigs, sighash },
   { path : 'return', pubkey : 'buyer_pub',  psigs, sighash },
-  { path : 'payout', pubkey : 'seller_pub', psigs, sighash },
+  { path : 'payment', pubkey : 'seller_pub', psigs, sighash },
   { path : 'return', pubkey : 'seller_pub', psigs, sighash },
 }
 ```
@@ -132,44 +129,45 @@ We can periodically check to see if the funds have been confirmed.
 ```ts
 const res = await contract.check.deposits()
 
-res = [
-  {
-
-  }
-]
+res = [{
+  confirmed  : false,
+  kind       : 'deposit',
+  txid       : '1ae2dcf580324163e86c3eaa63e49a05229b3f4d420f5c17d736e73a427d836f',
+  updated_at : 1688077240
+}]
 ```
 
 ## Contract Settlement
 
-The agent will auto-broadcast a closing transaction once all terms have been met.
+The agent will auto-broadcast a closing transaction once all deposits have been confirmed, and the contract terms have been met.
 
 **Duration**
 
 ```ts
-terms = { details : { duration, onclose : 'payout' } }
+terms = { details : { duration, onclose : 'payment' } }
 contract.on('close', (contract) => {})
 ```
 
 If the `duration` clause has been set, the agent will wait for the specified duration before closing the contract. This duration can be circumvented under the following conditions:
 
-  - A dispute has been filed by an authorized member.
-  - A quorum has been reached by authorized voters.
-  - All specified hash-locks have been revealed.
+  - A dispute has been filed by a registered claimant.
+  - A quorum has been reached by registered voters.
+  - All required hash-locks have been revealed.
 
-If no duration has been set, then the contract will close immediately after all signatures have been collected. The default close action is to execute the `payout` payment terms.
+If no duration has been set, then the contract will close immediately after all signatures and deposits have been confirmed.
 
 **Expiration**
 
 ```ts
-terms = { details : { expires, grace, return_address, onexpire : 'return' } }
+terms = { details : { expires, grace, return_address, onexpired : 'return' } }
 contract.on('expired', (contract) => {})
 ```
 
-In the event that a contract is held open by dispute, a maximum duration can be set using the `expiration` field. The default expiration setting on a contract is two weeks. Once a contract expires, the default action is to execute the `return` payment terms.
+In the event that a contract is held open by dispute, a maximum duration can be set using the `expires` field. The default expiration setting on a contract is two weeks.
 
-In addition to the contract expiration, depositors also have a time-lock guarantee on their funds. The duration of this lock is the contract expiration plus the `grace` period. The default grace period is two days.
+In addition to the contract expiration, each depositor can specify a return address. In the event of a total contract failure, depositors have a time-lock guarantee on the return of their funds.
 
-By default, each depositor can specify their own return address. This can be overidden with a fixed address by setting the `return_address` field.
+The duration of this time-lock is the contract expiration plus the `grace` period. The default grace period is two days.
 
 **Claims**
 
@@ -177,7 +175,7 @@ By default, each depositor can specify their own return address. This can be ove
 terms = { claimants : [ pubkey ] }
 
 contract.claim.open(reason)
-contract.claim.cancelsign()(reason)
+contract.claim.cancel(reason)
 
 contract.on('claim_open',   (reason, claim) => {})
 contract.on('claim_cancel', (reason, claim) => {})
@@ -296,61 +294,55 @@ interface ContractData {
 }
 
 interface ProposalData {
-  id      : string
-  sig     : string
-  created : number
+  id      : string  // Hash ID of the proposal.
+  sig     : string  // Signature attesting to the hash ID.
+  created : number  // Creation date of the proposal.
 
-  alias   : string  // 
-  pubkey  : string  // Derivation: secret/contract_id
-  nonce   : string  // Derivation: random/['settle', 'claim/other_pubkey/']
+  alias   : string  // Human-readable name for the member.
+  pubkey  : string  // Public key of the member.
+  nonce   : string  // Nonce value of the member.
 
   terms : {
+    // A hash of the contract terms.
     hash : string
 
+    // Claimants have the ability to dispute the contract.
     claimants : string[]
 
+    // Details of the contract.
     details : {
-      duration : number   // Duration for the agent to withold signing.
-      expires  : number   // Duration until deposits expire and are refunded.
-      grace    : number   // Extra grace period on deposits once contract expires.
-      onclose  : string   // Payment path that agent should execute on closing.
-      onexpire : string   // Payment path that agent should execute on expiration.
-      refund   : string   // Specify a dedicated refund output for the contract.
+      duration : number  // Duration for the agent to withold signing.
+      expires  : number  // Duration until deposits expire and are refunded.
+      grace    : number  // Extra grace period on deposits once contract expires.
+      onclose  : string  // Payment path that agent should execute on closing.
+      onexpire : string  // Payment path that agent should execute on expiration.
+      refund   : string  // Specify a dedicated refund output for the contract.
     }
 
-    fees : [
-      { address: string, value: number }
-    ]
+    // Fees are payable under any payment outcome.
+    fees     : [{ address: string, value: number }]
+    // Locks can be used to release a payment.
+    locks    : [{ hash : string, onrelease : 'payout' }]
 
-    locks : [
-      { hash : string, onrelease : 'payout' }
-    ]
-
-    payments : [
-      { value: number, address: string }
-    ]
-
+    // A quorum of votes can be used to release a payment.
     quorum  : {           
-      // A quorum can be used to settle a contract by vote.
-      members : [
-        // Public keys that can vote. Default weight is 1.
-        { pubkey : string, weight : number }
-      ]
+      // Public keys that can vote. Default weight is 1.
+      members : [{ pubkey : string, weight : number }]
       // Minimum value that must be reached.
       size : number
     }
 
-    records : [
-      { label : string, content : string }
-    ]
+    // Data records are endorsed by the contract signature.
+    records : [{ label : string, content : string }]
 
-    returns : [
-      { value: number, address: string }
-    ]
+    // List of payment schedules that can be executed.
+    schedule : {
+      payments : [{ value: number, address: string }]
+      returns  : [{ value: number, address: string }]
+    }
   }
 }
 ```
-
 
 ## Client API Reference
 
@@ -478,7 +470,6 @@ contract = {
 
   signature : {
     data    : SignatureData,
-    // If contract.conflicts is not empty, abort signing
     endorse : () => Promise<SignatureData>,
     remove  : () => Promise<void>
   },
@@ -537,13 +528,15 @@ proposal = {
 ## Signer API Reference
 
 ```ts
-interface SignerAPI {
+export interface SignerAPI {
   // Provides the public key for the signer.
   pubkey   : string
   // Generate a new Signer using an HMAC plus seed.
-  generate : (seed  : Bytes)  => SignerAPI
+  generate : (seed : Bytes)  => SignerAPI
   // Perform an HMAC signing operation.
-  hmac     : (msg   : Bytes)  => string
+  hmac     : (msg : Bytes)  => string
+  // Produce a partial musig2 signature.
+  musign   : (challenge : Bytes, nonces : Bytes[], vectors : Bytes[]) => string
   // Produce a random cryptographic seed.
   random   : (size ?: number) => string
   // Produce a BIP0340 signature using the interal secret.
