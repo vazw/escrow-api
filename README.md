@@ -423,7 +423,7 @@ contract = {
   // Leave the contract (draft stage).
   leave   : () => void,
 
-  // These options are only available 
+  // Access management is only available 
   // during the draft stage of a contract.
   access : {
     // Add pubkeys to the member list.
@@ -432,7 +432,7 @@ contract = {
     remove (pubkeys : string[]) : Promise<string[]>,
   },
 
-  // These options are only available 
+  // Admin management is only available 
   // during the draft stage of a contract.
   admin : {
     // Cancel the contract.
@@ -442,10 +442,6 @@ contract = {
     // Update the details of the contract.
     update ()
   },
-
-  agent : {
-    
-  }
 
   check : {
     deposits()
