@@ -69,9 +69,9 @@ In order to acheive consensus, all contract proposals must be identical.
 **Seller**
 
 ```ts
-// There is a conflict with the seller's terms.
+// There is a conflict with the buyer's terms.
 contract.conflicts = [ 'buyer_pubkey' ]
-// Accept and copy over terms from the seller.
+// Accept and copy over terms from the buyer.
 contract.proposal.fromAlias('buyer').accept()
 ```
 
