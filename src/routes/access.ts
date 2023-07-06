@@ -5,7 +5,7 @@ import { handleResponse } from './util.js'
 
 type Fetcher = typeof fetch
 
-export class MembersRouter {
+export class AccessRouter {
   readonly host  : string
   readonly fetch : Fetcher
 
@@ -22,10 +22,10 @@ export class MembersRouter {
     members    : string[]
   ) : Promise<ResponseAPI> {
     assert_hash(contractId)
-    const schema = ContractSchema.members
+    const schema = ContractSchema.access
     const body   = schema.parse(members)
     return this.fetch(
-      this.host + `/api/contract/${contractId}/members/update`,
+      this.host + `/api/contract/${contractId}/access/update`,
             {
         method : 'POST',
         body   : JSON.stringify(body)
@@ -38,10 +38,10 @@ export class MembersRouter {
     members    : string[]
   ) : Promise<ResponseAPI> {
     assert_hash(contractId)
-    const schema = ContractSchema.members
+    const schema = ContractSchema.access
     const body   = schema.parse(members)
     return this.fetch(
-      this.host + `/api/contract/${contractId}/members/remove`,
+      this.host + `/api/contract/${contractId}/access/remove`,
             {
         method : 'POST',
         body   : JSON.stringify(body)

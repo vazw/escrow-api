@@ -1,48 +1,62 @@
 import { z }          from 'zod'
 import { BaseSchema } from './base.js'
 
-export type TermData     = z.infer<typeof data>
-export type TermTemplate = z.infer<typeof template>
-export type TermDetails  = z.infer<typeof details>
-export type TermQuorum   = z.infer<typeof quorum>
+export type TermData      = z.infer<typeof data>
+export type TermLocks     = z.infer<typeof locks>
+export type TermQuorum    = z.infer<typeof quorum>
+export type TermSchedule  = z.infer<typeof schedule>
+export type TermTemplate  = z.infer<typeof template>
 
-const { address, entry, label, pubkey, timestamp, value } = BaseSchema
+const { address, entry, hash, label, pubkey, timestamp, value } = BaseSchema
 
-const feelabel = label.default('fee'),
-      paylabel = label.default('payout'),
-      retlabel = label.default('return'),
-      payfee   = z.tuple([ value, address, feelabel ]),
-      payout   = z.tuple([ value, address, paylabel ]),
-      payret   = z.tuple([ value, address, retlabel ]),
-      weight   = z.number().max(128).default(1),
-      vote     = z.tuple([ pubkey, weight ]),
-      members  = vote.array().default([]),
-      size     = z.number(),
-      fees     = payfee.array().default([]),
-      payments = payout.array().default([]),
-      returns  = payret.array().default([]),
-      records  = entry.array().default([])
+const payment   = z.tuple([ label, value, address ]),
+      fees      = payment.array(),
+      paths     = payment.array(),
+      records   = entry.array()
 
-const details = z.object({
-  duration : timestamp.default(0),
-  expires  : timestamp.default(60 * 60 * 24 * 7), // 1 week
-  grace    : timestamp.default(60 * 60 * 48),     // 2 days
-  onclose  : paylabel,
-  onexpire : retlabel,
-  return   : address.optional()
+const claims = z.object({
+  mediator : pubkey,
+  members  : pubkey.array()
+}).optional()
+
+// Locks enable a payment to be released
+// early, based on the reveal of a secret.
+const locks  = z.tuple([ label, hash ]).array().optional()
+
+// A quorum enables a payment to be released
+// early, based on a collection of signatures.
+const quorum = z.object({
+  members   : pubkey.array(),
+  threshold : z.number()
+}).optional()
+
+const schedule = z.object({
+  duration  : timestamp,  // Duration to hold contract open.
+  expires   : timestamp,  // Expiration of contract.
+  grace     : timestamp,  // Grace period between contract and deposit expiration.
+  onclose   : label,      // Payment action on close.
+  onexpired : label       // Payment action on contract expiration.
 })
-
-const quorum = z.object({ members, size }).optional()
 
 const template = z.object({
-  details: details.partial(),
+  claims,
   fees,
-  payments,
+  locks,
   quorum,
+  paths,
   records,
-  returns
+  schedule
 })
 
-const data = template.extend({ pubkey })
+const data = template.extend({ hash })
 
-export const TermSchema = { data, fees, template }
+export const TermSchema = {
+  claims,
+  data,
+  fees,
+  locks,
+  paths,
+  quorum,
+  schedule,
+  template
+}

@@ -2,15 +2,14 @@ import { assert_hash }    from '../lib/assert.js'
 import { handleResponse } from './util.js'
 
 import {
-  ContractCreate,
-  ContractData,
   ContractSchema,
+  ContractTemplate,
   ResponseAPI
 } from '../schema/index.js'
 
 type Fetcher = typeof fetch
 
-export class ContractRouter {
+export class AdminRouter {
   readonly host  : string
   readonly fetch : Fetcher
 
@@ -22,26 +21,15 @@ export class ContractRouter {
     this.fetch = fetcher
   }
 
-  async list () : Promise<ResponseAPI<ContractData[]>> {
-    return this.fetch(this.host + '/api/contract')
-      .then(async res => handleResponse(res))
-  }
-
-  async read (
-    contractId : string
-  ) : Promise<ResponseAPI<ContractData>> {
+  async update (
+    contractId : string,
+    template   : ContractTemplate
+  ) : Promise<ResponseAPI> {
     assert_hash(contractId)
-    return this.fetch(this.host + `/api/contract/${contractId}`)
-      .then(async res => handleResponse(res))
-  }
-
-  async create (
-    template : ContractCreate
-  ) : Promise<ResponseAPI<ContractData>> {
-    const schema = ContractSchema.create
+    const schema = ContractSchema.template
     const body   = schema.parse(template)
     return this.fetch(
-      this.host + '/api/contract/create',
+      this.host + `/api/contract/${contractId}/admin/update`,
       {
         method : 'POST',
         body   : JSON.stringify(body)
@@ -49,12 +37,12 @@ export class ContractRouter {
     ).then(async res => handleResponse(res))
   }
 
-  async status (
+  async cancel (
     contractId : string
   ) : Promise<ResponseAPI> {
+    assert_hash(contractId)
     return this.fetch(
-      this.host + `/api/contract/${contractId}/status`,
-      { method: 'GET' }
+      this.host + `/api/contract/${contractId}/admin/cancel`
     ).then(async res => handleResponse(res))
   }
 }

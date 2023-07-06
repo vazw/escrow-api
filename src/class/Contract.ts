@@ -1,26 +1,26 @@
 import { EscrowClient }       from './Client.js'
 import { EventEmitter }       from './Emitter.js'
 import { AdminController }    from './Admin.js'
+import { ClaimController }    from './Claim.js'
 import { ContractParser }     from './Parser.js'
+import { DepositController }  from './Deposit.js'
 import { ProposalController } from './Proposal.js'
-import { SignController }     from './Signature.js'
 import { EscrowRouter }       from '../routes/index.js'
 import { now }                from '../lib/utils.js'
 
 import { 
   apply_defaults,
+  ClaimData,
   ContractCreate,
   ContractData,
   AgentData,
   DepositData,
   ProposalData,
-  SignatureData,
   TransactionData,
   EscrowConfig,
   EscrowOptions,
   SignerAPI
 } from '../schema/index.js'
-
 
 export class EscrowContract extends EventEmitter {
 
@@ -90,9 +90,9 @@ export class EscrowContract extends EventEmitter {
     return this.data.then(res => res.agent)
   }
 
-  // get claims () : Promise<ClaimData[]> {
-  //   return this.data.then(res => res.claims)
-  // }
+  get claims () : Promise<ClaimData[]> {
+    return this.data.then(res => res.claims)
+  }
 
   get deposits () : Promise<DepositData[]> {
     return this.data.then(res => res.deposits)
@@ -108,10 +108,6 @@ export class EscrowContract extends EventEmitter {
 
   get proposals () : Promise<ProposalData[]> {
     return this.data.then(res => res.proposals)
-  }
-
-  get signatures () : Promise<SignatureData[]> {
-    return this.data.then(res => res.signatures)
   }
 
   get transactions () : Promise<TransactionData[]> {
@@ -134,6 +130,7 @@ export class EscrowContract extends EventEmitter {
     if (!res.ok) throw new Error(res.err)
     const validData = await this._parser.parse(res.data)
     this._cache     = validData
+    //  TODO:  Add history tracker array that syncs to localstore.
     this.updated_at = now()
     return validData
   }
@@ -146,10 +143,9 @@ export class EscrowContract extends EventEmitter {
   //   }
   // }
 
-  admin     = new AdminController(this)
-  // claim     = new ClaimController(this)
-  // deposit   = new DepositController(this)
-  proposal  = new ProposalController(this)
-  signature = new SignController(this)
+  admin   = new AdminController(this)
+  deposit = new DepositController(this)
+  dispute = new ClaimController(this)
+  propose = new ProposalController(this)
   // tx        = new TxController(this)
 }

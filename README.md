@@ -30,14 +30,14 @@ const contract = await EscrowContract.create(signer, {
   alias : 'seller',                   // You can use a short alias for your pubkey.
   nonce : signer.generate(64),        // Generate a random nonce for this draft session.
   terms : {
-    // Seller wants the contract to close after 1 week.
-    details  : { duration: day * 7, onclose: 'payment' },
     // Seller is charging a non-refundable fee.
-    fees     : [[ 10_000, 'bcp1selleraddress' ]],
+    fees  : [[ 10_000, 'bc1pselleraddress' ]],
     // Seller is receiving this payment on contract close.
-    schedule : {
-      payment : [[ 90_000, 'bcp1selleraddress' ]]
-    }
+    paths : [
+      [ 'payout', 90_000, 'bc1pselleraddress' ]
+    ]
+    // Seller wants the contract to close after 1 week.
+    schedule  : { duration: day * 7, onclose: 'payout' },
   }
 })
 ```
@@ -52,12 +52,14 @@ contract.join({
   alias : 'buyer',
   nonce : signer.random(64),
   terms : {
+    // Buyer wants the agent to handle disputes.
+    arbitrator : 'agent_pubkey'
+    // Buyer will receiving a partial return of funds in a dispute.
+    paths : [
+      [ 'return' , 90_000, 'bc1pbuyeraddress' ]
+    ]
     // Buyer wants to the contract to expire after two weeks.
-    details : { expires: day * 14, onexpired: 'return' },
-    // Buyer will receiving a return of funds in a dispute.
-    schedule : {
-      return : [[ 100_000, 'bcp1buyeraddress' ]]
-    }
+    schedule : { expires: day * 14, onexpired: 'return' },
   }
 })
 ```
@@ -244,6 +246,10 @@ interface ContractData {
     fees   : Payout[]  // Fees required for the agent to sign.
   }
 
+  claims : [{
+
+  }]
+
   deposits : [{
     // Deposit information.
     return : string    // Return address for the deposit.
@@ -256,13 +262,13 @@ interface ContractData {
     // Contract information.
     title   : string    // For briefly describing the contract.
     desc    : string    // Field for including detailed information.
+    feerate : boolean   // Flags whether contract is publicly searchable.
     network : string    // The network to use for the contract.
-    private : boolean   // Flags whether contract is publicly searchable.
     value   : number    // Total value of the contract.
   }
 
   // List of member proposals.
-  members  : Proposal[]
+  proposals  : Proposal[]
 
   session  : {
     // Session information.
@@ -311,18 +317,17 @@ interface ProposalData {
 
     // Details of the contract.
     details : {
-      duration : number  // Duration for the agent to withold signing.
-      expires  : number  // Duration until deposits expire and are refunded.
-      grace    : number  // Extra grace period on deposits once contract expires.
-      onclose  : string  // Payment path that agent should execute on closing.
-      onexpire : string  // Payment path that agent should execute on expiration.
-      refund   : string  // Specify a dedicated refund output for the contract.
+      duration  : number  // Duration for the agent to withold signing.
+      expires   : number  // Duration until deposits expire and are refunded.
+      grace     : number  // Extra grace period on deposits once contract expires.
+      onclose   : string  // Payment path that agent should execute on closing.
+      onexpired : string  // Payment path that agent should execute on expiration.
     }
 
     // Fees are payable under any payment outcome.
-    fees     : [{ address: string, value: number }]
+    fees    : [{ address: string, value: number }]
     // Locks can be used to release a payment.
-    locks    : [{ hash : string, onrelease : 'payout' }]
+    // locks    : [{ hash : string, onrelease : 'payout' }]
 
     // A quorum of votes can be used to release a payment.
     quorum  : {           
@@ -335,11 +340,11 @@ interface ProposalData {
     // Data records are endorsed by the contract signature.
     records : [{ label : string, content : string }]
 
-    // List of payment schedules that can be executed.
-    schedule : {
-      payments : [{ value: number, address: string }]
-      returns  : [{ value: number, address: string }]
-    }
+    // List of payment paths that can be executed.
+    paths : [
+      [ 'payout', value: number, address: string  ]
+      [ 'return',  value: number, address: string ]
+    ]
   }
 }
 ```

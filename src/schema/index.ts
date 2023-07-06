@@ -1,5 +1,6 @@
 export * from './model/base.js'
 export * from './model/agent.js'
+export * from './model/claim.js'
 export * from './model/contract.js'
 export * from './model/deposit.js'
 export * from './model/proposal.js'

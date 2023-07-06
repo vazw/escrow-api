@@ -1,5 +1,7 @@
-import { EscrowContract } from './Contract.js'
-import { MembersRouter }  from '../routes/access.js'
+import { EscrowContract }   from './Contract.js'
+import { EscrowRouter }     from '../routes/index.js'
+
+import { ContractTemplate } from '../schema/index.js'
 
 export class AdminController {
   readonly _contract : EscrowContract
@@ -14,42 +16,36 @@ export class AdminController {
     return this._contract.id
   }
 
-  get API () : MembersRouter {
-    return this._contract._client.API.members
+  get API () : EscrowRouter {
+    return this._contract._client.API
   }
 
   async refresh () {
     return this._contract.fetch()
   }
 
-  async add (member : string) {
-    const res = await this.API.update(this.id, [ member ])
+  async update (template : ContractTemplate) {
+    const res = await this.API.admin.update(this.id, template)
     if (!res.ok) throw new Error(res.err)
-    return this.refresh().then(e => e.members)
+    return this.refresh().then(e => e.access)
   }
 
-  async remove (member : string) {
-    const res = await this.API.remove(this.id, [ member ])
+  async cancel () {
+    const res = await this.API.admin.cancel(this.id)
     if (!res.ok) throw new Error(res.err)
-    return this.refresh().then(e => e.members)
+    return this.refresh().then(e => e.access)
   }
 
-  async update (members : string[]) {
-    const res = await this.API.update(this.id, members)
-    if (!res.ok) throw new Error(res.err)
-    return this.refresh().then(e => e.members)
+  access = {
+    add : async (members : string[]) => {
+      const res = await this.API.access.update(this.id, members)
+      if (!res.ok) throw new Error(res.err)
+      return this.refresh().then(e => e.access)
+    },
+    remove : async (members : string[]) => {
+      const res = await this.API.access.remove(this.id, members)
+      if (!res.ok) throw new Error(res.err)
+      return this.refresh().then(e => e.access)
+    }
   }
-
-  async delete (members : string[]) {
-    const res = await this.API.remove(this.id, members)
-    if (!res.ok) throw new Error(res.err)
-    return this.refresh().then(e => e.members)
-  }
-
-  // async clear () {
-  //   const res = await this.API. (this.cid, members)
-  //   if (!res.ok) throw new Error(res.err)
-  //   this.refresh().then(e => e.members)
-  // }
-
 }

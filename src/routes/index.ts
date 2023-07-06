@@ -1,7 +1,10 @@
-import { ContractRouter }  from './contract.js'
-import { MembersRouter }   from './access.js'
-import { ProfileRouter }   from './propose.js'
-import { SignatureRouter } from './signatures.js'
+
+import { AccessRouter }   from './access.js'
+import { AdminRouter }    from './admin.js'
+import { ClaimRouter }    from './claim.js'
+import { DepositRouter }  from './deposit.js'
+import { ContractRouter } from './contract.js'
+import { ProposalRouter } from './proposal.js'
 
 type Fetcher = typeof fetch
 
@@ -17,19 +20,27 @@ export class EscrowRouter {
     this.fetch    = fetcher
   }
 
+  get access () {
+    return new AccessRouter(this.host, this.fetch)
+  }
+
+  get admin () {
+    return new AdminRouter(this.host, this.fetch)
+  }
+
+  get claim () {
+    return new ClaimRouter(this.host, this.fetch)
+  }
+
   get contract () {
     return new ContractRouter(this.host, this.fetch)
   }
 
-  get members () {
-    return new MembersRouter(this.host, this.fetch)
+  get deposit () {
+    return new DepositRouter(this.host, this.fetch)
   }
 
   get proposal () {
-    return new ProfileRouter(this.host, this.fetch)
-  }
-
-  get signatures () {
-    return new SignatureRouter(this.host, this.fetch)
+    return new ProposalRouter(this.host, this.fetch)
   }
 }

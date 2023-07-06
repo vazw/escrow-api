@@ -4,18 +4,15 @@ import { TermSchema } from './terms.js'
 
 export type SessionData = z.infer<typeof data>
 
-const { hash, label, hex, nonce, pubkey, script } = BaseSchema
+const { hash, label, hex, script } = BaseSchema
 
 const template = z.tuple([ label, hex ])
 
 const data = z.object({
   secret    : hash,
-  pubkeys   : pubkey.array().default([]),
-  nonces    : nonce.array().default([]),
-  scripts   : script.array().default([]),
-  sighash   : hash.optional(),
+  scripts   : script.array().optional(),
   taproot   : hash.optional(),
-  templates : template.array().default([]),
+  templates : template.array().optional(),
   terms     : TermSchema.data.optional()
 })
 

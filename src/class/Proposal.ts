@@ -1,5 +1,5 @@
 import { EscrowContract } from './Contract.js'
-import { ProfileRouter }  from '../routes/propose.js'
+import { ProposalRouter } from '../routes/proposal.js'
 
 import {
   ProposalData,
@@ -15,7 +15,7 @@ export class ProposalController {
     this._contract = contract
   }
 
-  get API () : ProfileRouter {
+  get API () : ProposalRouter {
     return this._contract._client.API.proposal
   }
 

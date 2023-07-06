@@ -6,18 +6,16 @@ export type ProposalData     = z.infer<typeof data>
 export type ProposalPreimage = z.infer<typeof preimage>
 export type ProposalTemplate = z.infer<typeof template>
 
-const now = () => Math.floor(Date.now() / 1000)
-
-const { hash, label, nonce, pubkey, signature, timestamp } = BaseSchema
+const { bool, hash, label, pubkey, signature, timestamp } = BaseSchema
 
 const terms = TermSchema.data
 
 const alias      = label,
       id         = hash,
       sig        = signature,
-      created_at = timestamp.default(now())
+      created_at = timestamp
 
-const template = z.object({ alias, nonce, terms }),
+const template = z.object({ alias, terms, ready: bool }),
       preimage = template.extend({ pubkey, created_at }),
       data     = preimage.extend({ id, sig })
 

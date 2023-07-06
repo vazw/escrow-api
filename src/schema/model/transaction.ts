@@ -7,7 +7,7 @@ const { hash, hex, timestamp } = BaseSchema
 
 const data = z.object({
   confirmed  : z.boolean(),
-  kind       : z.enum([ 'deposit', 'spend' ]),
+  kind       : z.enum([ 'deposit', 'close' ]),
   txid       : hash,
   txdata     : hex,
   updated_at : timestamp

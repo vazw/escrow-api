@@ -4,7 +4,9 @@ export type Literal = z.infer<typeof literal>
 export type Json    = Literal | { [key : string] : Json } | Json[]
 
 const address    = z.string(),
+      bool       = z.boolean(),
       date       = z.date(),
+      index      = z.number().max(512),
       label      = z.string().min(2).max(32),
       script     = z.string().array(),
       str        = z.string(),
@@ -38,19 +40,24 @@ const entry  = z.tuple([ z.string(), literal ])
 const record = z.record(literal.array())
 const tags   = literal.array()
 
+const prevout = z.object({ value, script })
+
 export const BaseSchema = {
   address,
   base64,
   base64url,
   bech32,
+  bool,
   date,
   entry,
   hash,
   hex,
+  index,
   literal,
   json,
   label,
   nonce,
+  prevout,
   psig,
   pubkey,
   record,

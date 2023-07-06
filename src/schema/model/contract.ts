@@ -1,10 +1,10 @@
 import { z }               from 'zod'
 import { AgentSchema }     from './agent.js'
 import { BaseSchema }      from './base.js'
+import { ClaimSchema }     from './claim.js'
 import { DepositSchema }   from './deposit.js'
 import { ProposalSchema }  from './proposal.js'
 import { SessionSchema }   from './session.js'
-import { SignatureSchema } from './signature.js'
 import { TxSchema }        from './transaction.js'
 
 export type ContractCreate   = z.infer<typeof create>
@@ -13,11 +13,10 @@ export type ContractTemplate = z.infer<typeof template>
 
 const { hash, pubkey, timestamp, value } = BaseSchema
 
-const desc    = z.string().max(2048).default(''),
-      feerate = z.number().default(1),
-      members = pubkey.array().default([]),
-      network = z.enum([ 'bitcoin', 'testnet', 'regtest' ]).default('bitcoin'),
-      hidden  = z.boolean().default(true),
+const desc    = z.string().max(2048),
+      feerate = z.number(),
+      access  = pubkey.array(),
+      network = z.enum([ 'bitcoin', 'testnet', 'regtest' ]),
       status  = z.enum([ 'draft', 'published', 'active', 'disputed', 'closed' ]),
       title   = z.string().max(64)
 
@@ -26,15 +25,14 @@ const template = z.object({
   desc,
   feerate,
   network,
-  private: hidden,
   value
 })
 
-const create = template.merge(ProposalSchema.template).extend({ members })
+const create = template.merge(ProposalSchema.template).extend({ access })
 
 const base = z.object({
   status,
-  members,
+  access,
   contract_id : hash,
   admin       : pubkey,
   created_at  : timestamp,
@@ -43,17 +41,17 @@ const base = z.object({
 
 const data = base.extend({
   agent        : AgentSchema.data,
-  deposits     : DepositSchema.data.array().default([]),
-  proposals    : ProposalSchema.data.array().default([]),
+  claims       : ClaimSchema.data.array(),
+  deposits     : DepositSchema.data.array(),
   info         : template,
+  proposals    : ProposalSchema.data.array(),
   session      : SessionSchema.data,
-  signatures   : SignatureSchema.data.array().default([]),
-  transactions : TxSchema.data.array().default([])
+  transactions : TxSchema.data.array()
 })
 
 export const ContractSchema = {
   create,
   data,
-  members,
+  access,
   template
 }

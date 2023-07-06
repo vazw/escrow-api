@@ -2,14 +2,14 @@ import { assert_hash }    from '../lib/assert.js'
 import { handleResponse } from './util.js'
 
 import {
-  SignatureSchema,
-  SignatureTemplate,
+  ClaimSchema,
+  ClaimTemplate,
   ResponseAPI
 } from '../schema/index.js'
 
 type Fetcher = typeof fetch
 
-export class SignatureRouter {
+export class ClaimRouter {
   readonly host  : string
   readonly fetch : Fetcher
 
@@ -21,15 +21,24 @@ export class SignatureRouter {
     this.fetch = fetcher
   }
 
+  async status (
+    contractId : string
+  ) : Promise<ResponseAPI> {
+    return this.fetch(
+      this.host + `/api/contract/${contractId}/claim/status`,
+      { method: 'GET' }
+    ).then(async res => handleResponse(res))
+  }
+
   async update (
     contractId : string,
-    signature  : SignatureTemplate
+    claim      : ClaimTemplate
   ) : Promise<ResponseAPI> {
     assert_hash(contractId)
-    const schema = SignatureSchema.template
-    const body   = schema.parse(signature)
+    const schema = ClaimSchema.template
+    const body   = schema.parse(claim)
     return this.fetch(
-      this.host + `/api/contract/${contractId}/signature/update`,
+      this.host + `/api/contract/${contractId}/claim/update`,
       {
         method : 'POST',
         body   : JSON.stringify(body)
@@ -37,12 +46,12 @@ export class SignatureRouter {
     ).then(async res => handleResponse(res))
   }
 
-  async remove (
+  async cancel (
     contractId : string
   ) : Promise<ResponseAPI> {
     assert_hash(contractId)
     return this.fetch(
-      this.host + `/api/contract/${contractId}/signature/remove`,
+      this.host + `/api/contract/${contractId}/claim/cancel`,
       { method: 'GET' }
     ).then(async res => handleResponse(res))
   }
